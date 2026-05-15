@@ -1,8 +1,18 @@
+#![deny(clippy::all)]
 //! Heading-aware, token-budgeted semantic chunker for Markdown.
 //!
 //! Splits a Markdown document by heading hierarchy and merges/splits chunks
 //! to stay within a character budget. Designed for RAG pipelines and embedding
 //! workflows where section context matters.
+//!
+//! ## Supported Markdown
+//!
+//! - **Headers:** ATX only (`# H1` through `###### H6`). Setext headers
+//!   (`=====`/`-----` underlines) and headings with 7+ `#` are not recognized.
+//! - **Code blocks:** backtick-fenced (` ``` `) and inline (`` ` `` … `` ` ``).
+//!   Tilde fences (`~~~`) and 4-space-indented code are **not** protected —
+//!   `#` lines inside them are parsed as headers. Switch to backtick fences
+//!   to avoid mis-splits.
 //!
 //! ## Algorithm
 //!
@@ -42,8 +52,8 @@ pub use types::{Chunk, ChunkOptions};
 pub fn chunk(text: &str, options: Option<ChunkOptions>) -> Vec<Chunk> {
     let opts = options.unwrap_or_default();
 
-    let min_length = opts.min_length.unwrap_or(512);
-    let max_length = opts.max_length.unwrap_or(3072);
+    let min_length = opts.min_length.unwrap_or(512) as usize;
+    let max_length = opts.max_length.unwrap_or(3072) as usize;
     let phase = opts.phase.unwrap_or(3);
     let title = opts.title.as_deref();
 

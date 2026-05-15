@@ -293,10 +293,9 @@ fn phase3_child_too_large_stays_separate() {
 
 #[test]
 fn split_no_headers_empty_text() {
-    // text.is_empty() path → creates one chunk with empty text
+    // empty input → 0 chunks (symmetric with whitespace-only input)
     let chunks = chunk("", None);
-    assert_eq!(chunks.len(), 1);
-    assert_eq!(chunks[0].text, "");
+    assert!(chunks.is_empty());
 }
 
 #[test]
@@ -421,4 +420,47 @@ fn split_preface_without_title() {
     let preface = chunks.iter().find(|c| c.text.contains("Intro.")).unwrap();
     assert_eq!(preface.breadcrumb, "");
     assert!(preface.header.is_none());
+}
+
+// ── code-block extraction — placeholder correctness ───────────────────────
+
+#[test]
+fn placeholder_collision_regression() {
+    // A document that happens to contain the old ___CODE_BLOCK_0___ pattern
+    // alongside a real code block. With the PUA-based placeholder scheme the
+    // literal text is never touched by extract/restore, so it passes through
+    // unchanged while the real code block is correctly preserved.
+    let text = "# H\n\n___CODE_BLOCK_0___\n\n```\nreal code\n```";
+    let chunks = chunk(text, None);
+    let all_text: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        all_text.contains("___CODE_BLOCK_0___"),
+        "literal placeholder text must pass through unchanged"
+    );
+    assert!(
+        all_text.contains("```\nreal code\n```"),
+        "real code block must be preserved"
+    );
+}
+
+#[test]
+fn identical_code_blocks_both_restored() {
+    // Two identical fenced blocks in the same document must each be restored
+    // independently; a content-based replacement scheme would swap one.
+    let text = "# H\n\n```\nfoo\n```\n\nsome text\n\n```\nfoo\n```";
+    let chunks = chunk(text, None);
+    let all_text: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert_eq!(
+        all_text.matches("```\nfoo\n```").count(),
+        2,
+        "both identical code blocks must be preserved separately"
+    );
 }

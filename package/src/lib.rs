@@ -49,7 +49,13 @@ fn run_batch(inputs: &[String], options: &Option<breadchunks::ChunkOptions>) -> 
                     headers: c.headers,
                     breadcrumb: c.breadcrumb,
                     text: c.text,
-                    length: c.length,
+                    length: {
+                        assert!(
+                            c.length <= u32::MAX as usize,
+                            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding"
+                        );
+                        c.length as u32 // usize→u32 narrowing for napi; docs >4 GiB unsupported on Node binding
+                    },
                 })
                 .collect()
         })

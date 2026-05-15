@@ -6,10 +6,7 @@ static WHITESPACE_REGEX: LazyLock<Regex> =
 
 /// Count characters in `text` after collapsing all runs of whitespace to a
 /// single space and trimming leading/trailing whitespace.
-pub fn default_length_counter(text: &str) -> u32 {
+pub fn default_length_counter(text: &str) -> usize {
     let normalized = WHITESPACE_REGEX.replace_all(text.trim(), " ");
-    if normalized.is_empty() {
-        return 0;
-    }
-    normalized.chars().count() as u32
+    normalized.chars().count()
 }

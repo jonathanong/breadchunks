@@ -1,7 +1,7 @@
 use super::types::Chunk;
 use super::utils::{header_is_superset_of, set_length};
 
-fn should_merge(a_length: u32, b_length: u32, min_length: u32, max_length: u32) -> bool {
+fn should_merge(a_length: usize, b_length: usize, min_length: usize, max_length: usize) -> bool {
     if a_length >= min_length && b_length >= min_length {
         return false;
     }
@@ -9,7 +9,7 @@ fn should_merge(a_length: u32, b_length: u32, min_length: u32, max_length: u32) 
 }
 
 /// Phase 2: Linear pass merging consecutive chunks that share the same breadcrumb.
-pub fn merge_phase2(chunks: Vec<Chunk>, min_length: u32, max_length: u32) -> Vec<Chunk> {
+pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) -> Vec<Chunk> {
     if chunks.is_empty() {
         return chunks;
     }
@@ -43,7 +43,17 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: u32, max_length: u32) -> Vec
 }
 
 /// Phase 3: Hierarchical merge — absorb child sections into parent headers (bottom-up).
-pub fn merge_phase3(chunks: Vec<Chunk>, min_length: u32, max_length: u32) -> Vec<Chunk> {
+///
+/// For each heading level from h6 down to h1, any chunk whose length is below
+/// `max_length` will absorb immediately-following child chunks (those at a
+/// deeper level whose heading path is a suffix of the parent's) as long as the
+/// combined length stays within `max_length`.
+///
+/// **Note:** absorbed children's heading lines are rendered into `chunk.text`
+/// (e.g. `## Child Section\n\n...`) but `chunk.headers` continues to reflect
+/// only the parent's heading path. To enumerate all headings inside a merged
+/// chunk, scan `chunk.text` for ATX headers.
+pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) -> Vec<Chunk> {
     let mut result = chunks;
 
     for level in (1..=6).rev() {

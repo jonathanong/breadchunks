@@ -12,14 +12,40 @@ pub fn set_length(chunk: &mut Chunk) {
     }
 }
 
-/// Replace `___CODE_BLOCK_N___` placeholders back with the original code content.
+/// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
+/// Single-pass O(N) where N is the length of `text`.
 pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
-    let mut result = text.to_string();
-    for (i, block) in blocks.iter().enumerate() {
-        let placeholder = format!("___CODE_BLOCK_{i}___");
-        result = result.replace(&placeholder, block);
+    const SENTINEL: char = '\u{E000}';
+    if blocks.is_empty() || !text.contains(SENTINEL) {
+        return text.to_string();
     }
-    result
+    let mut out = String::with_capacity(text.len());
+    let mut remaining = text;
+    while let Some(start) = remaining.find(SENTINEL) {
+        out.push_str(&remaining[..start]);
+        remaining = &remaining[start + SENTINEL.len_utf8()..];
+        if let Some(end) = remaining.find(SENTINEL) {
+            let tag = &remaining[..end];
+            remaining = &remaining[end + SENTINEL.len_utf8()..];
+            if let Some(idx_str) = tag.strip_prefix("CODE_BLOCK_") {
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    if let Some(block) = blocks.get(idx) {
+                        out.push_str(block);
+                        continue;
+                    }
+                }
+            }
+            // Not a valid placeholder — emit the delimiters and tag verbatim.
+            out.push(SENTINEL);
+            out.push_str(tag);
+            out.push(SENTINEL);
+        } else {
+            // Lone sentinel with no closing pair — emit verbatim.
+            out.push(SENTINEL);
+        }
+    }
+    out.push_str(remaining);
+    out
 }
 
 /// Check if `parent`'s header path is a prefix of `child`'s header path.
@@ -83,16 +109,29 @@ mod tests {
     }
     #[test]
     fn restore_one() {
-        let r = restore_code_placeholders("A ___CODE_BLOCK_0___ B", &["X".to_string()]);
+        let placeholder = "\u{E000}CODE_BLOCK_0\u{E000}";
+        let r = restore_code_placeholders(&format!("A {placeholder} B"), &["X".to_string()]);
         assert_eq!(r, "A X B");
     }
     #[test]
     fn restore_many() {
-        let r = restore_code_placeholders(
-            "___CODE_BLOCK_0___ ___CODE_BLOCK_1___",
-            &["A".to_string(), "B".to_string()],
-        );
+        let p0 = "\u{E000}CODE_BLOCK_0\u{E000}";
+        let p1 = "\u{E000}CODE_BLOCK_1\u{E000}";
+        let r =
+            restore_code_placeholders(&format!("{p0} {p1}"), &["A".to_string(), "B".to_string()]);
         assert_eq!(r, "A B");
+    }
+    #[test]
+    fn restore_invalid_placeholder_passes_through() {
+        // \u{E000}UNKNOWN\u{E000} is not a valid CODE_BLOCK_N — emitted verbatim
+        let r = restore_code_placeholders("\u{E000}UNKNOWN\u{E000}", &["X".to_string()]);
+        assert_eq!(r, "\u{E000}UNKNOWN\u{E000}");
+    }
+    #[test]
+    fn restore_lone_sentinel_passes_through() {
+        // A lone \u{E000} with no closing pair is emitted verbatim
+        let r = restore_code_placeholders("before\u{E000}after", &["X".to_string()]);
+        assert_eq!(r, "before\u{E000}after");
     }
     #[test]
     fn super_len_mismatch() {

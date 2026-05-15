@@ -47,10 +47,10 @@ jobs:
       - name: Run Rust tests with coverage
         run: |
           mkdir -p target/llvm-cov
-          cargo llvm-cov --package breadchunks --show-missing-lines --lcov --output-path target/llvm-cov/lcov.info
+          cargo llvm-cov --package breadchunks --show-missing-lines --fail-under-lines 99 --lcov --output-path target/llvm-cov/lcov.info
 
       - name: Upload coverage to Codecov
-        if: ${{ env.CODECOV_TOKEN != '' }}
+        if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v6
         with:
           token: ${{ env.CODECOV_TOKEN }}

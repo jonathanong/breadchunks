@@ -17,10 +17,9 @@ function readFixture(name) {
 // Async + string inputs (basic parity with old API)
 // ---------------------------------------------------------------------------
 
-test('empty string returns one empty chunk', async () => {
+test('empty string returns no chunks', async () => {
   const [chunks] = await chunk([''])
-  assert.equal(chunks.length, 1)
-  assert.equal(chunks[0].text, '')
+  assert.equal(chunks.length, 0)
 })
 
 test('no headers returns single level-0 chunk', async () => {
