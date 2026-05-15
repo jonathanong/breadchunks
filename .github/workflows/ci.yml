@@ -1,70 +1,64 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 jobs:
-  test-crate:
-    name: Rust crate (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Run tests with coverage
-        working-directory: crate
-        # --fail-under-lines 99: cargo-llvm-cov 0.8.5 counts 1 phantom
-        # "line" in its summary metric that doesn't appear in LCOV, HTML,
-        # or JSON segment data — all three confirm 100% real coverage.
-        # Keep this at 99 until the upstream tool fixes the phantom count.
-        run: cargo llvm-cov --fail-under-lines 99 --lcov --output-path lcov.info
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: crate/lcov.info
-          fail_ci_if_error: false
-
-  clippy:
-    name: Clippy
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - run: cargo clippy --workspace --all-targets -- -D warnings
 
-  test-node:
-    name: Node package (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install Rust stable
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt, llvm-tools-preview
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Run Rust tests with coverage
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package breadchunks --show-missing-lines --lcov --output-path target/llvm-cov/lcov.info
+
+      - name: Upload coverage to Codecov
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: target/llvm-cov/lcov.info
+          flags: rust
+          fail_ci_if_error: true
+
+      - name: Install Node dependencies
         working-directory: package
         run: npm install
 
@@ -72,6 +66,6 @@ jobs:
         working-directory: package
         run: npm run build:debug
 
-      - name: Run node tests
+      - name: Run Node tests
         working-directory: package
         run: npm test

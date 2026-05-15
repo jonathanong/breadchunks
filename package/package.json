@@ -4,6 +4,11 @@
   "description": "Heading-aware, token-budgeted semantic chunker for Markdown — for RAG and embedding pipelines.",
   "main": "index.js",
   "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
