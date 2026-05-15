@@ -1,6 +1,7 @@
 use super::types::Chunk;
 use super::utils::{restore_code_placeholders, set_length};
 use regex::Regex;
+use std::fmt::Write as _;
 use std::sync::LazyLock;
 
 static CODE_BLOCK_REGEX: LazyLock<Regex> =
@@ -148,7 +149,7 @@ fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
     let mut cursor = 0;
     for (i, m) in CODE_BLOCK_REGEX.find_iter(text).enumerate() {
         out.push_str(&text[cursor..m.start()]);
-        out.push_str(&format!("\u{E000}CODE_BLOCK_{i}\u{E000}"));
+        write!(out, "\u{E000}CODE_BLOCK_{i}\u{E000}").unwrap();
         blocks.push(m.as_str().to_string());
         cursor = m.end();
     }
