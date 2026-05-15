@@ -25,8 +25,41 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-rust-release
+          cache-bin: "false"
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run Rust tests
+        run: cargo test --package breadchunks
+
+      - name: Check Cargo package
+        run: cargo publish --dry-run --locked -p breadchunks
+
   prepare:
     name: Prepare release
+    needs: validate
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump.outputs.version }}
@@ -73,62 +106,22 @@ jobs:
           git tag -a "v$version" -m "v$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Push release commit and tag
-        run: git push origin HEAD:main --follow-tags
-
-  validate:
-    name: Validate
-    needs: prepare
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: v${{ needs.prepare.outputs.version }}
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1-rust-release
-          cache-bin: "false"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-
       - name: Verify versions match
         shell: bash
         run: |
           set -euo pipefail
-          tag="${{ needs.prepare.outputs.version }}"
+          tag="${{ steps.bump.outputs.version }}"
           cargo_version="$(cargo metadata --no-deps --format-version 1 | node -e "let d=''; process.stdin.on('data', c => d += c); process.stdin.on('end', () => console.log(JSON.parse(d).packages.find(p => p.name === 'breadchunks').version));")"
           npm_version="$(node -p "require('./package/package.json').version")"
           test "$tag" = "$cargo_version" || { echo "Cargo version $cargo_version != tag $tag"; exit 1; }
           test "$tag" = "$npm_version" || { echo "npm version $npm_version != tag $tag"; exit 1; }
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
-
-      - name: Run Rust tests
-        run: cargo test --package breadchunks
-
-      - name: Check Cargo package
-        run: cargo publish --dry-run --locked -p breadchunks
+      - name: Push release commit and tag
+        run: git push origin HEAD:main --follow-tags
 
   build:
     name: Build ${{ matrix.target }}
-    needs:
-      - prepare
-      - validate
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -186,7 +179,6 @@ jobs:
     name: Publish
     needs:
       - prepare
-      - validate
       - build
     runs-on: ubuntu-latest
     steps:

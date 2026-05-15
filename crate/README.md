@@ -36,6 +36,8 @@ Three-phase pipeline:
 2. **Phase 2 — Merge same-breadcrumb**: Merge adjacent chunks that share a breadcrumb and are below `min_length`.
 3. **Phase 3 — Parent absorption** (bottom-up, h6→h1): Absorb small child sections into their parent when the combined size stays under `max_length`.
 
+**Supported Markdown:** ATX headers only (`# H1` through `###### H6`). Setext headers (`====`/`----` underlines) are not recognized. Backtick-fenced code blocks (` ``` `) and inline code (`` ` ``) are protected. Tilde fences (`~~~`) and 4-space-indented code are **not** — `#` inside them is treated as a header. Switch to backtick fences if your document uses tildes.
+
 ## API
 
 ### `chunk(text, options) -> Vec<Chunk>`
@@ -55,12 +57,12 @@ Three-phase pipeline:
 | `header` | `Option<String>` | Text of the nearest heading |
 | `headers` | `Vec<Option<String>>` | Full 6-slot heading stack (h1–h6) |
 | `breadcrumb` | `String` | Human-readable path: `"H1 > H2 > H3"` |
-| `text` | `String` | Chunk body (without the heading line) |
-| `length` | `u32` | Character count of `breadcrumb + "\n\n" + text` |
+| `text` | `String` | Chunk body (without the heading line or breadcrumb). Prepend `breadcrumb + "\n\n"` for embedding. |
+| `length` | `usize` | Char count of `breadcrumb + "\n\n" + text` after whitespace collapse. `text` alone is shorter; callers must prepend `breadcrumb` to reproduce this measurement. |
 
-### `default_length_counter(text) -> u32`
+### `default_length_counter(text) -> usize`
 
-Collapses whitespace runs to a single space, trims, returns Unicode character count. Use it for consistent length measurements:
+Collapses whitespace runs to a single space, trims, returns Unicode character count (not bytes). Use it for consistent length measurements:
 
 ```rust
 use breadchunks::default_length_counter;

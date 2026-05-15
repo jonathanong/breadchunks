@@ -3,8 +3,7 @@ use breadchunks::{chunk, ChunkOptions};
 #[test]
 fn test_empty_text() {
     let chunks = chunk("", None);
-    assert_eq!(chunks.len(), 1);
-    assert_eq!(chunks[0].text, "");
+    assert!(chunks.is_empty());
 }
 
 #[test]

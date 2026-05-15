@@ -9,6 +9,10 @@ Heading-aware, token-budgeted semantic chunker for Markdown.
 
 Given a Markdown document, `breadchunks` splits it by heading hierarchy and merges/splits chunks to stay within a character budget. Designed for RAG pipelines and embedding workflows where section context matters.
 
+## Supported platforms
+
+Prebuilt binaries: macOS arm64/x64, Linux glibc arm64/x64, Windows x64. Alpine/musl and Windows arm64 users must build from source via `napi build`.
+
 ## How it works
 
 Three-phase pipeline:
@@ -16,6 +20,8 @@ Three-phase pipeline:
 1. **Phase 1 — Split**: Split at header boundaries. Every paragraph becomes its own chunk, tagged with its full heading breadcrumb (`H1 > H2 > H3`). Code blocks are protected — `# comment` inside a fenced block is never treated as a Markdown heading.
 2. **Phase 2 — Merge same-breadcrumb**: Merge adjacent chunks that share the same breadcrumb and are below `minLength`.
 3. **Phase 3 — Parent absorption** (bottom-up, h6→h1): Absorb small child sections into their parent header when the combined size stays under `maxLength`.
+
+**Supported Markdown:** ATX headers only (`# H1` through `###### H6`). Setext headers (`====`/`----` underlines) are not recognized. Backtick-fenced code blocks (` ``` `) and inline code (`` ` ``) are protected. Tilde fences (`~~~`) and 4-space-indented code are **not** — `#` inside them is treated as a header. Switch to backtick fences if your document uses tildes.
 
 Chunk `length` is a character count after collapsing all whitespace runs to a single space. The same logic applies when computing the length of `breadcrumb + "\n\n" + text` (the full string an embedding model sees).
 
@@ -58,12 +64,12 @@ for c in &chunks {
 | `header` | `Option<String>` | Text of the nearest heading |
 | `headers` | `Vec<Option<String>>` | Full 6-slot heading stack (h1–h6) |
 | `breadcrumb` | `String` | Human-readable path: `"H1 > H2 > H3"` |
-| `text` | `String` | Chunk body (without the heading line) |
-| `length` | `u32` | `default_length_counter(breadcrumb + "\n\n" + text)` |
+| `text` | `String` | Chunk body (without the heading line or breadcrumb). To get the full string an embedding model sees, prepend `breadcrumb + "\n\n"` when `breadcrumb` is non-empty. |
+| `length` | `usize` | Character count of `breadcrumb + "\n\n" + text` after whitespace collapse. `text` alone is shorter; callers must prepend `breadcrumb` to reproduce this measurement. |
 
 ### `default_length_counter`
 
-Collapses all whitespace runs to a single space, trims, then counts Unicode characters (not bytes). This is what populates `chunk.length`. Export it for consistent counts elsewhere:
+Collapses all whitespace runs to a single space, trims, then counts Unicode characters (not bytes). This is what populates `chunk.length`. Use it for consistent counts when building the string you send to an embedding model (`breadcrumb + "\n\n" + text`). Export it for consistent counts elsewhere:
 
 ```rust
 use breadchunks::default_length_counter;

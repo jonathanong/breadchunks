@@ -12,11 +12,11 @@ pub fn set_length(chunk: &mut Chunk) {
     }
 }
 
-/// Replace `___CODE_BLOCK_N___` placeholders back with the original code content.
+/// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
 pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
     let mut result = text.to_string();
     for (i, block) in blocks.iter().enumerate() {
-        let placeholder = format!("___CODE_BLOCK_{i}___");
+        let placeholder = format!("\u{E000}CODE_BLOCK_{i}\u{E000}");
         result = result.replace(&placeholder, block);
     }
     result
@@ -83,13 +83,16 @@ mod tests {
     }
     #[test]
     fn restore_one() {
-        let r = restore_code_placeholders("A ___CODE_BLOCK_0___ B", &["X".to_string()]);
+        let placeholder = "\u{E000}CODE_BLOCK_0\u{E000}";
+        let r = restore_code_placeholders(&format!("A {placeholder} B"), &["X".to_string()]);
         assert_eq!(r, "A X B");
     }
     #[test]
     fn restore_many() {
+        let p0 = "\u{E000}CODE_BLOCK_0\u{E000}";
+        let p1 = "\u{E000}CODE_BLOCK_1\u{E000}";
         let r = restore_code_placeholders(
-            "___CODE_BLOCK_0___ ___CODE_BLOCK_1___",
+            &format!("{p0} {p1}"),
             &["A".to_string(), "B".to_string()],
         );
         assert_eq!(r, "A B");

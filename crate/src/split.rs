@@ -61,10 +61,11 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         None,
     ];
 
-    let header_matches: Vec<_> = HEADER_REGEX.find_iter(&text_without_code).collect();
+    let header_matches: Vec<_> = HEADER_REGEX.captures_iter(&text_without_code).collect();
 
-    for (i, header_match) in header_matches.iter().enumerate() {
-        let header_text = header_match.as_str().trim().to_string();
+    for (i, cap) in header_matches.iter().enumerate() {
+        let full_match = cap.get(0).unwrap();
+        let header_text = cap.get(1).unwrap().as_str();
         let level = header_text.chars().take_while(|&c| c == '#').count() as u32;
         let header_content = header_text.trim_start_matches('#').trim();
 
@@ -80,9 +81,9 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
         let breadcrumb = build_breadcrumb(&headers);
 
-        let content_start = header_match.end();
+        let content_start = full_match.end();
         let content_end = if i + 1 < header_matches.len() {
-            header_matches[i + 1].start()
+            header_matches[i + 1].get(0).unwrap().start()
         } else {
             text_without_code.len()
         };
@@ -114,9 +115,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     if header_matches.is_empty() {
         let restored_content = restore_code_placeholders(text_without_code.trim(), &code_blocks);
 
-        let should_create = text.is_empty() || !restored_content.trim().is_empty();
-
-        if should_create {
+        if !restored_content.trim().is_empty() {
             let mut chunk = Chunk {
                 level: 0,
                 header: title.map(std::string::ToString::to_string),
@@ -140,17 +139,21 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     chunks
 }
 
+/// Single-pass extraction: replaces each code block with a PUA-bracketed
+/// placeholder (`U+E000 CODE_BLOCK_N U+E000`) that cannot appear in ordinary
+/// Markdown, then returns the substituted text and the extracted blocks.
 fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
     let mut blocks = Vec::new();
-    let mut result = text.to_string();
-
-    for (i, capture) in CODE_BLOCK_REGEX.find_iter(text).enumerate() {
-        blocks.push(capture.as_str().to_string());
-        let placeholder = format!("___CODE_BLOCK_{i}___");
-        result = result.replacen(capture.as_str(), &placeholder, 1);
+    let mut out = String::with_capacity(text.len());
+    let mut cursor = 0;
+    for (i, m) in CODE_BLOCK_REGEX.find_iter(text).enumerate() {
+        out.push_str(&text[cursor..m.start()]);
+        out.push_str(&format!("\u{E000}CODE_BLOCK_{i}\u{E000}"));
+        blocks.push(m.as_str().to_string());
+        cursor = m.end();
     }
-
-    (result, blocks)
+    out.push_str(&text[cursor..]);
+    (out, blocks)
 }
 
 fn build_breadcrumb(headers: &[Option<String>]) -> String {

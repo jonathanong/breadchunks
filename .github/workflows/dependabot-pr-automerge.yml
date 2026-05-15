@@ -1,5 +1,10 @@
 name: Dependabot PR Auto-merge
 
+# NOTE: pull_request_target gives this workflow access to repo secrets and
+# runs with write permissions. We intentionally do NOT checkout the PR head —
+# doing so would let a malicious dependency PR execute code with our secrets.
+# If you add an actions/checkout step here, restrict it to
+# github.event.pull_request.base.sha only.
 on:
   pull_request_target:
     types:
@@ -22,29 +27,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/github-script@v9
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pr = context.payload.pull_request;
-
-            function isMajorBump(from, to) {
-              const major = v => parseInt(v.replace(/^v/, '').split('.')[0], 10);
-              return major(to) > major(from);
-            }
-
-            function hasMajorBump(pullRequest) {
-              const titleMatch = pullRequest.title.match(/from\s+v?([\d.]+)\s+to\s+v?([\d.]+)/i);
-              if (titleMatch) {
-                return isMajorBump(titleMatch[1], titleMatch[2]);
-              }
-
-              const body = pullRequest.body ?? '';
-              const bodyMatches = [...body.matchAll(/from\s+`?v?([\d.]+)`?\s+to\s+`?v?([\d.]+)`?/gi)];
-              return bodyMatches.some(match => isMajorBump(match[1], match[2]));
-            }
 
             function hasActiveApproval(reviews) {
               const latestStateByUser = new Map();
@@ -67,11 +63,6 @@ jobs:
 
             if (pr.draft) {
               core.info('Skipping draft pull request');
-              return;
-            }
-
-            if (hasMajorBump(pr)) {
-              core.info('Skipping semver-major update');
               return;
             }
 
