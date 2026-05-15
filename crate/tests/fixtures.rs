@@ -33,9 +33,15 @@ fn tech_guide_code_blocks_not_headers() {
     let chunks = chunk(&text, None);
     // "# not a header" and "# Global settings" inside fences must not become breadcrumbs
     assert!(!chunks.iter().any(|c| c.breadcrumb.contains("not a header")));
-    assert!(!chunks.iter().any(|c| c.breadcrumb.contains("Global settings")));
+    assert!(!chunks
+        .iter()
+        .any(|c| c.breadcrumb.contains("Global settings")));
     // But fenced content must still appear in chunk text
-    let combined: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ");
+    let combined: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(combined.contains("brew install toolbox"));
 }
 
@@ -43,15 +49,33 @@ fn tech_guide_code_blocks_not_headers() {
 fn tech_guide_header_hierarchy() {
     // Use phase=1 to see all raw chunks before merging absorbs nested sections
     let text = read_fixture("tech-guide.md");
-    let chunks = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
-    let nested: Vec<_> = chunks.iter().filter(|c| c.breadcrumb.contains(" > ")).collect();
-    assert!(!nested.is_empty(), "should have nested breadcrumbs in phase-1 output");
+    let chunks = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    let nested: Vec<_> = chunks
+        .iter()
+        .filter(|c| c.breadcrumb.contains(" > "))
+        .collect();
+    assert!(
+        !nested.is_empty(),
+        "should have nested breadcrumbs in phase-1 output"
+    );
 }
 
 #[test]
 fn tech_guide_phase1_more_chunks_than_default() {
     let text = read_fixture("tech-guide.md");
-    let phase1 = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let phase1 = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let full = chunk(&text, None);
     assert!(phase1.len() >= full.len());
 }
@@ -61,7 +85,10 @@ fn tech_guide_max_length_respected() {
     let text = read_fixture("tech-guide.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions { max_length: Some(300), ..Default::default() }),
+        Some(ChunkOptions {
+            max_length: Some(300),
+            ..Default::default()
+        }),
     );
     let over: usize = chunks.iter().filter(|c| c.length > 300).count();
     // Allow at most 10% violation (single paragraphs longer than max can't be split)
@@ -73,7 +100,13 @@ fn tech_guide_max_length_respected() {
 #[test]
 fn recipe_no_preface() {
     let text = read_fixture("recipe.md");
-    let chunks = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     // recipe.md starts with "## Lemon..." so there is no preface
     assert!(chunks.iter().all(|c| c.level >= 2));
 }
@@ -88,8 +121,20 @@ fn recipe_breadcrumbs_present() {
 #[test]
 fn recipe_phase2_merges_short_paragraphs() {
     let text = read_fixture("recipe.md");
-    let p1 = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
-    let p2 = chunk(&text, Some(ChunkOptions { phase: Some(2), ..Default::default() }));
+    let p1 = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    let p2 = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(2),
+            ..Default::default()
+        }),
+    );
     // phase 2 should merge some same-breadcrumb chunks
     assert!(p2.len() <= p1.len());
 }
@@ -99,7 +144,13 @@ fn recipe_phase2_merges_short_paragraphs() {
 #[test]
 fn deeply_nested_all_levels_present_in_phase1() {
     let text = read_fixture("deeply-nested.md");
-    let chunks = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let levels: std::collections::HashSet<u32> = chunks.iter().map(|c| c.level).collect();
     // Fixture has h1 through h6
     for lvl in 1..=6 {
@@ -110,7 +161,13 @@ fn deeply_nested_all_levels_present_in_phase1() {
 #[test]
 fn deeply_nested_phase3_reduces_count() {
     let text = read_fixture("deeply-nested.md");
-    let p1 = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let p1 = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let p3 = chunk(&text, None);
     assert!(p3.len() <= p1.len());
 }
@@ -137,9 +194,21 @@ fn code_heavy_no_fake_breadcrumbs() {
     let text = read_fixture("code-heavy.md");
     let chunks = chunk(&text, None);
     for c in &chunks {
-        assert!(!c.breadcrumb.contains("not a heading"), "fake heading leaked: {}", c.breadcrumb);
-        assert!(!c.breadcrumb.contains("Nested comment"), "fake heading leaked: {}", c.breadcrumb);
-        assert!(!c.breadcrumb.contains("another decoy"), "fake heading leaked: {}", c.breadcrumb);
+        assert!(
+            !c.breadcrumb.contains("not a heading"),
+            "fake heading leaked: {}",
+            c.breadcrumb
+        );
+        assert!(
+            !c.breadcrumb.contains("Nested comment"),
+            "fake heading leaked: {}",
+            c.breadcrumb
+        );
+        assert!(
+            !c.breadcrumb.contains("another decoy"),
+            "fake heading leaked: {}",
+            c.breadcrumb
+        );
     }
 }
 
@@ -147,7 +216,11 @@ fn code_heavy_no_fake_breadcrumbs() {
 fn code_heavy_code_preserved_in_text() {
     let text = read_fixture("code-heavy.md");
     let chunks = chunk(&text, None);
-    let combined: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join("\n");
+    let combined: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(combined.contains("print(\"Hello, world!\")"));
     assert!(combined.contains("struct Config"));
     assert!(combined.contains("set -euo pipefail"));
@@ -166,9 +239,17 @@ fn gettysburg_basic_chunks() {
 #[test]
 fn gettysburg_has_preface_or_background() {
     let text = read_fixture("gettysburg.md");
-    let chunks = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     // Should have chunks for Background and Address sections
-    assert!(chunks.iter().any(|c| c.breadcrumb.contains("Background") || c.text.contains("1863")));
+    assert!(chunks
+        .iter()
+        .any(|c| c.breadcrumb.contains("Background") || c.text.contains("1863")));
 }
 
 #[test]
@@ -195,7 +276,15 @@ fn gettysburg_with_title_option() {
 #[test]
 fn gettysburg_nested_historical_note() {
     let text = read_fixture("gettysburg.md");
-    let chunks = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
-    let bliss = chunks.iter().find(|c| c.breadcrumb.contains("Bliss Copy") || c.text.contains("Bliss"));
+    let chunks = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    let bliss = chunks
+        .iter()
+        .find(|c| c.breadcrumb.contains("Bliss Copy") || c.text.contains("Bliss"));
     assert!(bliss.is_some());
 }

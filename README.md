@@ -77,15 +77,25 @@ npm install breadchunks
 ```
 
 ```js
-import { chunk } from 'breadchunks'
+import { chunk, chunkSync } from 'breadchunks'
 
-const chunks = chunk(markdown, { minLength: 400, maxLength: 2000 })
+// Preferred: async batch with Buffers (runs on libuv threadpool)
+const [chunks] = await chunk([Buffer.from(markdown)], { minLength: 400, maxLength: 2000 })
 for (const c of chunks) {
   console.log(`[${c.breadcrumb}]`, c.text.slice(0, 80))
 }
+
+// Process multiple documents in one call
+const results = await chunk([docA, docB, docC])
+// results[0] → Chunk[] for docA, results[1] → Chunk[] for docB, …
+
+// Sync escape hatch (blocks the event loop)
+const [syncChunks] = chunkSync([markdown])
 ```
 
 TypeScript types are included (`index.d.ts`). Options and return shape mirror the Rust API.
+
+Both `chunk` and `chunkSync` accept a batch of `Buffer | string` inputs. `Buffer` is preferred — it avoids a round-trip UTF-8 re-encode from the JS string heap. Pass `string` when you already have one.
 
 ### Node `ChunkOptions`
 
