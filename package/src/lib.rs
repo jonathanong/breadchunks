@@ -50,9 +50,9 @@ fn run_batch(inputs: &[String], options: &Option<breadchunks::ChunkOptions>) -> 
                     breadcrumb: c.breadcrumb,
                     text: c.text,
                     length: {
-                        debug_assert!(
+                        assert!(
                             c.length <= u32::MAX as usize,
-                            "chunk length exceeds u32::MAX"
+                            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding"
                         );
                         c.length as u32 // usize→u32 narrowing for napi; docs >4 GiB unsupported on Node binding
                     },
