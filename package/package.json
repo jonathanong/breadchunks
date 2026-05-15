@@ -28,14 +28,14 @@
     "coverage": "c8 node --test __test__/*.spec.mjs"
   },
   "napi": {
-    "name": "breadchunks",
-    "triples": {
-      "defaults": true,
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu"
-      ]
-    }
+    "binaryName": "breadchunks",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc"
+    ]
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.6.2",
