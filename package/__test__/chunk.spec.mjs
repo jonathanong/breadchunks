@@ -124,9 +124,7 @@ test('mixed Buffer and string in one batch', async () => {
 
 test('invalid UTF-8 Buffer rejects', async () => {
   const bad = Buffer.from([0xff, 0xfe, 0x00])
-  // chunk throws synchronously before creating the AsyncTask; wrap in async so
-  // the sync throw becomes a rejected Promise that assert.rejects can handle.
-  await assert.rejects(async () => chunk([bad]), /UTF-8/)
+  await assert.rejects(chunk([bad]), /UTF-8/)
 })
 
 // ---------------------------------------------------------------------------

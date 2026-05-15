@@ -22,13 +22,10 @@ pub struct Chunk {
     pub length: u32,
 }
 
-fn decode_input(input: Either<Buffer, String>) -> Result<String> {
-    match input {
-        Either::A(buf) => std::str::from_utf8(&buf)
-            .map(|s| s.to_owned())
-            .map_err(|e| Error::from_reason(format!("Buffer is not valid UTF-8: {e}"))),
-        Either::B(s) => Ok(s),
-    }
+// Defers UTF-8 validation to the worker thread for the async path.
+enum TaskInput {
+    Bytes(Vec<u8>),
+    String(String),
 }
 
 fn map_options(options: Option<ChunkOptions>) -> Option<breadchunks::ChunkOptions> {
@@ -60,7 +57,7 @@ fn run_batch(inputs: &[String], options: &Option<breadchunks::ChunkOptions>) -> 
 }
 
 pub struct ChunkTask {
-    inputs: Vec<String>,
+    inputs: Vec<TaskInput>,
     options: Option<breadchunks::ChunkOptions>,
 }
 
@@ -69,7 +66,16 @@ impl Task for ChunkTask {
     type JsValue = Vec<Vec<Chunk>>;
 
     fn compute(&mut self) -> Result<Self::Output> {
-        Ok(run_batch(&self.inputs, &self.options))
+        let inputs = std::mem::take(&mut self.inputs);
+        let decoded: Result<Vec<String>> = inputs
+            .into_iter()
+            .map(|i| match i {
+                TaskInput::Bytes(b) => String::from_utf8(b)
+                    .map_err(|e| Error::from_reason(format!("Buffer is not valid UTF-8: {e}"))),
+                TaskInput::String(s) => Ok(s),
+            })
+            .collect();
+        Ok(run_batch(&decoded?, &self.options))
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
@@ -81,12 +87,18 @@ impl Task for ChunkTask {
 pub fn chunk(
     inputs: Vec<Either<Buffer, String>>,
     options: Option<ChunkOptions>,
-) -> Result<AsyncTask<ChunkTask>> {
-    let inputs: Result<Vec<String>> = inputs.into_iter().map(decode_input).collect();
-    Ok(AsyncTask::new(ChunkTask {
-        inputs: inputs?,
+) -> AsyncTask<ChunkTask> {
+    let task_inputs = inputs
+        .into_iter()
+        .map(|i| match i {
+            Either::A(buf) => TaskInput::Bytes(buf.to_vec()),
+            Either::B(s) => TaskInput::String(s),
+        })
+        .collect();
+    AsyncTask::new(ChunkTask {
+        inputs: task_inputs,
         options: map_options(options),
-    }))
+    })
 }
 
 #[napi(js_name = "chunkSync")]
@@ -94,6 +106,14 @@ pub fn chunk_sync(
     inputs: Vec<Either<Buffer, String>>,
     options: Option<ChunkOptions>,
 ) -> Result<Vec<Vec<Chunk>>> {
-    let inputs: Result<Vec<String>> = inputs.into_iter().map(decode_input).collect();
-    Ok(run_batch(&inputs?, &map_options(options)))
+    let decoded: Result<Vec<String>> = inputs
+        .into_iter()
+        .map(|i| match i {
+            Either::A(buf) => std::str::from_utf8(&buf)
+                .map(|s| s.to_owned())
+                .map_err(|e| Error::from_reason(format!("Buffer is not valid UTF-8: {e}"))),
+            Either::B(s) => Ok(s),
+        })
+        .collect();
+    Ok(run_batch(&decoded?, &map_options(options)))
 }
