@@ -54,9 +54,6 @@ jobs:
       - name: Run Rust tests
         run: cargo test --package breadchunks
 
-      - name: Check Cargo package
-        run: cargo publish --dry-run --locked -p breadchunks
-
   prepare:
     name: Prepare release
     needs: validate
@@ -80,6 +77,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Configure git
         run: |
@@ -111,10 +113,13 @@ jobs:
         run: |
           set -euo pipefail
           tag="${{ steps.bump.outputs.version }}"
-          cargo_version="$(cargo metadata --no-deps --format-version 1 | node -e "let d=''; process.stdin.on('data', c => d += c); process.stdin.on('end', () => console.log(JSON.parse(d).packages.find(p => p.name === 'breadchunks').version));")"
+          cargo_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name=="breadchunks") | .version')"
           npm_version="$(node -p "require('./package/package.json').version")"
           test "$tag" = "$cargo_version" || { echo "Cargo version $cargo_version != tag $tag"; exit 1; }
           test "$tag" = "$npm_version" || { echo "npm version $npm_version != tag $tag"; exit 1; }
+
+      - name: Check Cargo package (post-bump)
+        run: cargo publish --dry-run --locked -p breadchunks
 
       - name: Push release commit and tag
         run: git push origin HEAD:main --follow-tags

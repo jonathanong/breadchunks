@@ -1,3 +1,4 @@
+#![deny(clippy::all)]
 //! Heading-aware, token-budgeted semantic chunker for Markdown.
 //!
 //! Splits a Markdown document by heading hierarchy and merges/splits chunks
@@ -35,7 +36,6 @@
 //! let chunks = chunk(markdown, Some(options));
 //! assert!(!chunks.is_empty());
 //! ```
-#![deny(clippy::all)]
 
 mod merge;
 mod split;

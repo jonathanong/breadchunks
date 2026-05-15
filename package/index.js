@@ -20,6 +20,9 @@ let nativeBinding = null
 let loadError = null
 
 const localFile = platformMap[`${platform} ${arch}`]
+if (!localFile) {
+  loadError = new Error(`Unsupported platform: ${platform} ${arch}. Prebuilt binaries are available for macOS arm64/x64, Linux glibc arm64/x64, and Windows x64. Other platforms must build from source via \`napi build\`.`)
+}
 
 if (localFile && existsSync(join(__dirname, localFile))) {
   try {

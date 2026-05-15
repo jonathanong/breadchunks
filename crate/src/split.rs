@@ -68,9 +68,10 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         let full_match = cap.get(0).unwrap();
         let header_text = cap.get(1).unwrap().as_str();
         let level = header_text.chars().take_while(|&c| c == '#').count() as u32;
-        let header_content = header_text.trim_start_matches('#').trim();
+        let header_content_raw = header_text.trim_start_matches('#').trim();
+        let header_content = restore_code_placeholders(header_content_raw, &code_blocks);
 
-        headers[(level - 1) as usize] = Some(header_content.to_string());
+        headers[(level - 1) as usize] = Some(header_content.clone());
 
         for header in headers
             .iter_mut()

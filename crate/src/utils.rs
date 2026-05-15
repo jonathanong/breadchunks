@@ -13,7 +13,7 @@ pub fn set_length(chunk: &mut Chunk) {
 }
 
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
-/// Single-pass O(M): scans for the PUA sentinel, parses the index, splices in the block.
+/// Single-pass O(N) where N is the length of `text`.
 pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
     const SENTINEL: char = '\u{E000}';
     if blocks.is_empty() || !text.contains(SENTINEL) {
