@@ -34,8 +34,12 @@ fn test_multiple_headers() {
     };
     let chunks = chunk(text, Some(options));
     assert!(chunks.len() >= 2);
-    assert!(chunks.iter().any(|c| c.header == Some("Header 1".to_string())));
-    assert!(chunks.iter().any(|c| c.header == Some("Header 2".to_string())));
+    assert!(chunks
+        .iter()
+        .any(|c| c.header == Some("Header 1".to_string())));
+    assert!(chunks
+        .iter()
+        .any(|c| c.header == Some("Header 2".to_string())));
 }
 
 #[test]
@@ -213,7 +217,9 @@ fn test_code_blocks_no_fake_headers() {
     let code_chunk = chunks.iter().find(|c| c.text.contains("```"));
     assert!(code_chunk.is_some());
     assert!(code_chunk.unwrap().text.contains("# not a heading"));
-    assert!(!chunks.iter().any(|c| c.breadcrumb.contains("not a heading")));
+    assert!(!chunks
+        .iter()
+        .any(|c| c.breadcrumb.contains("not a heading")));
 }
 
 #[test]
@@ -376,7 +382,9 @@ fn test_header_regex_valid_only() {
     let text = "\n# Valid H1\n\nThis has a #hashtag in the middle.\n\n##Invalid header without space\n\n###### Valid H6\n\nContent continues.\n\n####### Invalid H7 (too many hashes)\n";
     let chunks = chunk(text, None);
 
-    assert!(chunks.iter().any(|c| c.header == Some("Valid H1".to_string())));
+    assert!(chunks
+        .iter()
+        .any(|c| c.header == Some("Valid H1".to_string())));
     assert!(!chunks
         .iter()
         .any(|c| c.header.as_ref().is_some_and(|h| h.contains("##Invalid"))));

@@ -56,7 +56,11 @@ fn restore_zero_blocks() {
 fn restore_one_block() {
     let text = "# H\n\n```\ncode\n```";
     let chunks = chunk(text, None);
-    let combined: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join("");
+    let combined: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join("");
     assert!(combined.contains("```\ncode\n```"));
 }
 
@@ -64,7 +68,11 @@ fn restore_one_block() {
 fn restore_multiple_blocks() {
     let text = "# H\n\n```\nblock1\n```\n\nSome text.\n\n```\nblock2\n```";
     let chunks = chunk(text, None);
-    let combined: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ");
+    let combined: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(combined.contains("block1"));
     assert!(combined.contains("block2"));
 }
@@ -86,7 +94,11 @@ fn superset_different_length_returns_false() {
         }),
     );
     // Sibling B must NOT be absorbed into Sibling A
-    let combined: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ");
+    let combined: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(combined.contains("Sib A text."));
     assert!(combined.contains("Sib B text."));
 }
@@ -112,7 +124,13 @@ fn superset_parent_some_child_none_returns_false() {
     // h2 "A" followed by h3 "B" then h2 "A" again — the second h2 should NOT
     // be treated as a child of the first h2, even though they share "Root".
     let text = "# Root\n\nR.\n\n## A\n\nA text.\n\n### Sub\n\nSub text.\n\n## B\n\nB text.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     // After phase1, B should be a separate chunk, not merged into A
     assert!(chunks.iter().any(|c| c.header == Some("B".to_string())));
 }
@@ -127,7 +145,13 @@ fn should_merge_both_big_no_merge() {
         "word ".repeat(120), // ~600 chars
         "word ".repeat(120),
     );
-    let p1 = chunk(&text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let p1 = chunk(
+        &text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let p2 = chunk(
         &text,
         Some(ChunkOptions {
@@ -145,7 +169,13 @@ fn should_merge_both_big_no_merge() {
 fn should_merge_one_small_within_max_merges() {
     // a=small, b=small, sum <= max → merge
     let text = "# H\n\nShort.\n\n# H\n\nAlso short.";
-    let p1 = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let p1 = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let p2 = chunk(
         text,
         Some(ChunkOptions {
@@ -186,7 +216,10 @@ fn phase2_empty_input() {
     // BUT chunk("   ") returns 0 chunks, so phase2 gets an empty vec
     let chunks = chunk(
         "   \n\n   ",
-        Some(ChunkOptions { phase: Some(2), ..Default::default() }),
+        Some(ChunkOptions {
+            phase: Some(2),
+            ..Default::default()
+        }),
     );
     assert_eq!(chunks.len(), 0);
 }
@@ -194,7 +227,13 @@ fn phase2_empty_input() {
 #[test]
 fn phase2_different_breadcrumb_not_merged() {
     let text = "# A\n\nText A.\n\n## B\n\nText B.";
-    let p1 = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let p1 = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let p2 = chunk(
         text,
         Some(ChunkOptions {
@@ -288,7 +327,13 @@ fn split_no_headers_with_title() {
 fn split_preface_whitespace_paragraphs_filtered() {
     // Blank lines between preface and first header must not create empty chunks
     let text = "\n\n\n\n# H1\n\nContent.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     // No empty-text chunks
     assert!(chunks.iter().all(|c| !c.text.is_empty()));
 }
@@ -297,7 +342,13 @@ fn split_preface_whitespace_paragraphs_filtered() {
 fn split_header_level_6_clears_nothing_below() {
     // h6 is the deepest; there is nothing below level 6 to clear
     let text = "###### H6\n\nDeep content.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     assert_eq!(chunks[0].level, 6);
     assert_eq!(chunks[0].breadcrumb, "H6");
 }
@@ -306,8 +357,17 @@ fn split_header_level_6_clears_nothing_below() {
 fn split_header_level_1_clears_h2_through_h6() {
     // After h1, h2-h6 slots must all be None
     let text = "## H2\n\nA.\n\n### H3\n\nB.\n\n# Back to H1\n\nC.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
-    let h1_chunk = chunks.iter().find(|c| c.header == Some("Back to H1".to_string())).unwrap();
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    let h1_chunk = chunks
+        .iter()
+        .find(|c| c.header == Some("Back to H1".to_string()))
+        .unwrap();
     // All slots except h1 (index 0) must be None
     for slot in &h1_chunk.headers[1..] {
         assert!(slot.is_none(), "slot was not cleared: {slot:?}");
@@ -318,8 +378,16 @@ fn split_header_level_1_clears_h2_through_h6() {
 fn split_last_header_content_end_is_text_len() {
     // The last header uses text.len() as content_end (not a later header start)
     let text = "# Only Header\n\nThe only paragraph.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
-    assert!(chunks.iter().any(|c| c.text.contains("The only paragraph.")));
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    assert!(chunks
+        .iter()
+        .any(|c| c.text.contains("The only paragraph.")));
 }
 
 #[test]
@@ -343,7 +411,13 @@ fn split_preface_with_title() {
 fn split_preface_without_title() {
     // no title → preface has empty breadcrumb
     let text = "Intro.\n\n# H1\n\nBody.";
-    let chunks = chunk(text, Some(ChunkOptions { phase: Some(1), ..Default::default() }));
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
     let preface = chunks.iter().find(|c| c.text.contains("Intro.")).unwrap();
     assert_eq!(preface.breadcrumb, "");
     assert!(preface.header.is_none());
