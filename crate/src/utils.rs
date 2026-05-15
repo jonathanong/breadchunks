@@ -117,10 +117,8 @@ mod tests {
     fn restore_many() {
         let p0 = "\u{E000}CODE_BLOCK_0\u{E000}";
         let p1 = "\u{E000}CODE_BLOCK_1\u{E000}";
-        let r = restore_code_placeholders(
-            &format!("{p0} {p1}"),
-            &["A".to_string(), "B".to_string()],
-        );
+        let r =
+            restore_code_placeholders(&format!("{p0} {p1}"), &["A".to_string(), "B".to_string()]);
         assert_eq!(r, "A B");
     }
     #[test]

@@ -432,7 +432,11 @@ fn placeholder_collision_regression() {
     // unchanged while the real code block is correctly preserved.
     let text = "# H\n\n___CODE_BLOCK_0___\n\n```\nreal code\n```";
     let chunks = chunk(text, None);
-    let all_text: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ");
+    let all_text: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(
         all_text.contains("___CODE_BLOCK_0___"),
         "literal placeholder text must pass through unchanged"
@@ -449,7 +453,11 @@ fn identical_code_blocks_both_restored() {
     // independently; a content-based replacement scheme would swap one.
     let text = "# H\n\n```\nfoo\n```\n\nsome text\n\n```\nfoo\n```";
     let chunks = chunk(text, None);
-    let all_text: String = chunks.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ");
+    let all_text: String = chunks
+        .iter()
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert_eq!(
         all_text.matches("```\nfoo\n```").count(),
         2,
