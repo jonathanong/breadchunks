@@ -122,6 +122,18 @@ mod tests {
         assert_eq!(r, "A B");
     }
     #[test]
+    fn restore_invalid_placeholder_passes_through() {
+        // \u{E000}UNKNOWN\u{E000} is not a valid CODE_BLOCK_N — emitted verbatim
+        let r = restore_code_placeholders("\u{E000}UNKNOWN\u{E000}", &["X".to_string()]);
+        assert_eq!(r, "\u{E000}UNKNOWN\u{E000}");
+    }
+    #[test]
+    fn restore_lone_sentinel_passes_through() {
+        // A lone \u{E000} with no closing pair is emitted verbatim
+        let r = restore_code_placeholders("before\u{E000}after", &["X".to_string()]);
+        assert_eq!(r, "before\u{E000}after");
+    }
+    #[test]
     fn super_len_mismatch() {
         assert!(!header_is_superset_of(&[s("a")], &[s("a"), s("b")]));
     }
