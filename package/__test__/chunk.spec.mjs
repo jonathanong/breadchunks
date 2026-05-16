@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const { chunk } = await import('../index.js')
+const mod = await import('../index.js')
+const { chunk } = mod
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const fixturesDir = join(__dirname, '../../fixtures')
@@ -155,6 +156,10 @@ test('batch with shared options applies to all inputs', async () => {
   for (const chunks of results) {
     assert(chunks[0].breadcrumb.startsWith('Suite'))
   }
+})
+
+test('chunkSync is not exported', () => {
+  assert.equal(mod.chunkSync, undefined)
 })
 
 // ---------------------------------------------------------------------------

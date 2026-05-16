@@ -55,7 +55,7 @@ const isMuslFromChildProcess = () => {
   try {
     return require('child_process').execSync('ldd --version', { encoding: 'utf8' }).includes('musl')
   } catch (e) {
-    // If we reach this case, we don't know if the system is musl or not, so is better to just fallback to false
+    // If we reach this case, we don't know if the system is musl or not, so it is better to just fall back to false
     return false
   }
 }
@@ -561,9 +561,9 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
 if (!nativeBinding) {
   if (loadErrors.length > 0) {
     throw new Error(
-      `Cannot find native binding. ` +
-        `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
-        'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
+      `Failed to load native binding for ${process.platform}/${process.arch}. ` +
+        `If this platform is unsupported, build from source: \`napi build --release\`. ` +
+        `Otherwise, try \`npm i\` again after removing both package-lock.json and node_modules directory.`,
       {
         cause: loadErrors.reduce((err, cur) => {
           cur.cause = err
