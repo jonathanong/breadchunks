@@ -10,7 +10,13 @@ use super::types::Chunk;
 pub fn set_length(chunk: &mut Chunk) {
     let b = default_length_counter(&chunk.breadcrumb);
     let t = default_length_counter(&chunk.text);
-    chunk.length = if b == 0 { t } else if t == 0 { b } else { b + 1 + t };
+    chunk.length = if b == 0 {
+        t
+    } else if t == 0 {
+        b
+    } else {
+        b + 1 + t
+    };
 }
 
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
