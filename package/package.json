@@ -1,6 +1,6 @@
 {
   "name": "breadchunks",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Heading-aware, token-budgeted semantic chunker for Markdown — for RAG and embedding pipelines.",
   "main": "index.js",
   "types": "index.d.ts",
