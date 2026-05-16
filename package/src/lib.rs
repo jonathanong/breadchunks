@@ -106,20 +106,3 @@ pub fn chunk(
         options: map_options(options),
     })
 }
-
-#[napi(js_name = "chunkSync")]
-pub fn chunk_sync(
-    inputs: Vec<Either<Buffer, String>>,
-    options: Option<ChunkOptions>,
-) -> Result<Vec<Vec<Chunk>>> {
-    let decoded: Result<Vec<String>> = inputs
-        .into_iter()
-        .map(|i| match i {
-            Either::A(buf) => std::str::from_utf8(&buf)
-                .map(|s| s.to_owned())
-                .map_err(|e| Error::from_reason(format!("Buffer is not valid UTF-8: {e}"))),
-            Either::B(s) => Ok(s),
-        })
-        .collect();
-    Ok(run_batch(&decoded?, &map_options(options)))
-}

@@ -17,5 +17,3 @@ export interface ChunkOptions {
   phase?: number
   title?: string
 }
-
-export declare function chunkSync(inputs: Array<Buffer | string>, options?: ChunkOptions | undefined | null): Array<Array<Chunk>>
