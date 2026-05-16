@@ -41,7 +41,7 @@ Three-phase pipeline:
 2. **Phase 2 — Merge same-breadcrumb**: Merge adjacent chunks that share the same breadcrumb and are below `minLength`.
 3. **Phase 3 — Parent absorption** (bottom-up, h6→h1): Absorb small child sections into their parent when the combined size stays under `maxLength`.
 
-**Supported Markdown:** ATX headers only (`# H1` through `###### H6`). Setext headers, tilde fences (`~~~`), and 4-space-indented code are not recognized as structural boundaries.
+**Supported Markdown:** ATX headers only (`# H1` through `###### H6`). Backtick-fenced code blocks are protected. Setext headers, tilde fences (`~~~`), and 4-space-indented code are not recognized as structural boundaries — `#` inside them is treated as a header.
 
 ## API
 
@@ -71,10 +71,10 @@ function chunk(
 | `header` | `string?` | Text of the nearest heading |
 | `headers` | `(string \| null)[]` | Full 6-slot heading stack (h1–h6) |
 | `breadcrumb` | `string` | Human-readable path: `"H1 > H2 > H3"` |
-| `text` | `string` | Chunk body (without the heading line or breadcrumb). Prepend `breadcrumb + "\n\n"` for the full string an embedding model sees. |
-| `length` | `number` | Character count of `breadcrumb + "\n\n" + text` after whitespace collapse. `text` alone is shorter. |
+| `text` | `string` | Chunk body (without the heading line or breadcrumb). To get the full string an embedding model sees, prepend `breadcrumb + "\n\n"` when `breadcrumb` is non-empty. |
+| `length` | `number` | Character count of the full string (including breadcrumb if present) after whitespace collapse. |
 
-> **Note on `length`**: it counts `breadcrumb + "\n\n" + text` after collapsing all whitespace runs to a single space — _not_ `text.length`. Callers migrating from a `text.length` baseline will see systematically larger numbers.
+> **Note on `length`**: it counts `breadcrumb + "\n\n" + text` (or just `text` if `breadcrumb` is empty) after collapsing all whitespace runs to a single space — _not_ `text.length`.
 
 ## License
 
