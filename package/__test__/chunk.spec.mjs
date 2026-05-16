@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+
+const requireCJS = createRequire(import.meta.url)
 
 const mod = await import('../index.js')
 const { chunk } = mod
@@ -160,6 +163,7 @@ test('batch with shared options applies to all inputs', async () => {
 
 test('chunkSync is not exported', () => {
   assert.equal(mod.chunkSync, undefined)
+  assert.equal(requireCJS('../index.js').chunkSync, undefined)
 })
 
 // ---------------------------------------------------------------------------

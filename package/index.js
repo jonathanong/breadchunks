@@ -569,7 +569,9 @@ if (!nativeBinding) {
 
 if (!nativeBinding) {
   if (loadErrors.length > 0) {
-    const isUnsupported = loadErrors.some((e) => /^Unsupported (OS|architecture)/i.test(e.message))
+    const isUnsupported =
+      loadErrors.some((e) => /^Unsupported (OS|architecture)/i.test(e.message)) ||
+      loadErrors.every((e) => e.code === 'MODULE_NOT_FOUND')
     if (isUnsupported) {
       throw new Error(
         `No prebuilt binary for ${process.platform}/${process.arch}. Build from source with: \`napi build --release\``,
