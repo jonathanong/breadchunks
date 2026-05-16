@@ -559,11 +559,26 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
 }
 
 if (!nativeBinding) {
+  // Final attempt: unsuffixed file produced by `napi build` without --platform
+  try {
+    nativeBinding = require('./breadchunks.node')
+  } catch (_e) {
+    // not present
+  }
+}
+
+if (!nativeBinding) {
   if (loadErrors.length > 0) {
+    const isUnsupported = loadErrors.some((e) => /^Unsupported (OS|architecture)/i.test(e.message))
+    if (isUnsupported) {
+      throw new Error(
+        `No prebuilt binary for ${process.platform}/${process.arch}. Build from source with: \`napi build --release\``,
+        { cause: loadErrors[loadErrors.length - 1] },
+      )
+    }
     throw new Error(
       `Failed to load native binding for ${process.platform}/${process.arch}. ` +
-        `If this platform is unsupported, build from source: \`napi build --release\`. ` +
-        `Otherwise, try \`npm i\` again after removing both package-lock.json and node_modules directory.`,
+        `Try \`npm i\` again after removing both package-lock.json and node_modules directory.`,
       {
         cause: loadErrors.reduce((err, cur) => {
           cur.cause = err
