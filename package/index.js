@@ -580,10 +580,9 @@ if (!nativeBinding) {
       `Failed to load native binding for ${process.platform}/${process.arch}. ` +
         `Try \`npm i\` again after removing both package-lock.json and node_modules directory.`,
       {
-        cause: loadErrors.reduce((err, cur) => {
-          cur.cause = err
-          return cur
-        }),
+        cause: [...loadErrors].reduce((cause, e) =>
+          new Error(e instanceof Error ? e.message : String(e), { cause }),
+        ),
       },
     )
   }
