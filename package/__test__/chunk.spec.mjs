@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const { chunk, chunkSync } = await import('../index.js')
+const { chunk } = await import('../index.js')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const fixturesDir = join(__dirname, '../../fixtures')
@@ -155,32 +155,6 @@ test('batch with shared options applies to all inputs', async () => {
   for (const chunks of results) {
     assert(chunks[0].breadcrumb.startsWith('Suite'))
   }
-})
-
-// ---------------------------------------------------------------------------
-// chunkSync
-// ---------------------------------------------------------------------------
-
-test('chunkSync returns synchronously and matches async result', async () => {
-  const text = '# Title\n\nBody text.'
-  const sync = chunkSync([text])
-  const [async_] = await chunk([text])
-  assert.deepEqual(sync[0], async_)
-})
-
-test('chunkSync handles Buffer input', () => {
-  const text = '# Sync\n\nContent.'
-  const result = chunkSync([Buffer.from(text, 'utf8')])
-  assert.equal(result.length, 1)
-  assert(result[0].some((c) => c.header === 'Sync'))
-})
-
-test('chunkSync invalid UTF-8 throws', () => {
-  assert.throws(() => chunkSync([Buffer.from([0xff, 0xfe])]), /UTF-8/)
-})
-
-test('chunkSync empty batch returns empty array', () => {
-  assert.deepEqual(chunkSync([]), [])
 })
 
 // ---------------------------------------------------------------------------
