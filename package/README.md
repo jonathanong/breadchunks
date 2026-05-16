@@ -5,7 +5,7 @@
 
 Heading-aware, token-budgeted semantic chunker for Markdown — for RAG and embedding pipelines.
 
-Native Node.js addon (N-API). Prebuilt binaries for macOS arm64/x64, Linux glibc arm64/x64, and Windows x64. Alpine/musl and Windows arm64 must build from source via `napi build --release`.
+Native Node.js addon (N-API). Prebuilt binaries for macOS arm64/x64, Linux glibc arm64/x64, and Windows x64. Alpine/musl and Windows arm64 must build from source (requires cloning the repository) via `napi build --release`.
 
 ## Install
 
