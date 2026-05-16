@@ -4,9 +4,10 @@ use super::types::Chunk;
 /// Compute character length for a chunk. Includes the breadcrumb in the count
 /// because embeddings will see "breadcrumb\n\ntext" as the full input.
 ///
-/// Counts breadcrumb and text independently then adds 1 for the `\n\n`
-/// separator (which collapses to a single space under whitespace-normalization).
-/// Zero allocations.
+/// Counts breadcrumb and text independently. The `\n\n` separator (which
+/// collapses to a single space under whitespace-normalization, contributing 1
+/// to the count) is included only when both sides normalize to a non-zero
+/// length. Zero allocations.
 pub fn set_length(chunk: &mut Chunk) {
     let b = default_length_counter(&chunk.breadcrumb);
     let t = default_length_counter(&chunk.text);
@@ -103,6 +104,21 @@ mod tests {
         let mut c = chunk("H1", "content");
         set_length(&mut c);
         assert_eq!(c.length, 10); // "H1 content" after whitespace normalize
+    }
+    #[test]
+    fn set_length_breadcrumb_empty_text() {
+        // Non-empty breadcrumb with empty text: separator must not be counted.
+        let mut c = chunk("H1", "");
+        set_length(&mut c);
+        assert_eq!(c.length, 2); // breadcrumb only: "H1"
+    }
+    #[test]
+    fn set_length_breadcrumb_whitespace_text() {
+        // Non-empty breadcrumb with whitespace-only text: text normalizes to 0,
+        // so separator must not be counted.
+        let mut c = chunk("H1", "   ");
+        set_length(&mut c);
+        assert_eq!(c.length, 2); // breadcrumb only: "H1"
     }
     #[test]
     fn restore_zero() {
