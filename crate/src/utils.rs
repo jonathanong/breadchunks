@@ -3,13 +3,14 @@ use super::types::Chunk;
 
 /// Compute character length for a chunk. Includes the breadcrumb in the count
 /// because embeddings will see "breadcrumb\n\ntext" as the full input.
+///
+/// Counts breadcrumb and text independently then adds 1 for the `\n\n`
+/// separator (which collapses to a single space under whitespace-normalization).
+/// Zero allocations.
 pub fn set_length(chunk: &mut Chunk) {
-    if chunk.breadcrumb.is_empty() {
-        chunk.length = default_length_counter(&chunk.text);
-    } else {
-        let text = format!("{}\n\n{}", chunk.breadcrumb, chunk.text);
-        chunk.length = default_length_counter(&text);
-    }
+    let b = default_length_counter(&chunk.breadcrumb);
+    let t = default_length_counter(&chunk.text);
+    chunk.length = if b == 0 { t } else { b + 1 + t };
 }
 
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.

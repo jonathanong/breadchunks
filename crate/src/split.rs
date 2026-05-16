@@ -24,12 +24,10 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     if let Some(first_match) = first_header {
         let preface_content = &text_without_code[..first_match.start()];
 
-        let paragraphs: Vec<&str> = PARAGRAPH_SPLIT_REGEX
+        for paragraph in PARAGRAPH_SPLIT_REGEX
             .split(preface_content)
             .filter(|p| !p.trim().is_empty())
-            .collect();
-
-        for paragraph in paragraphs {
+        {
             let restored_content = restore_code_placeholders(paragraph.trim(), &code_blocks);
 
             let mut chunk = Chunk {
@@ -62,12 +60,19 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         None,
     ];
 
-    let header_matches: Vec<_> = HEADER_REGEX.captures_iter(&text_without_code).collect();
+    // Collect only the byte positions and header text slice we actually need —
+    // cheaper than keeping full `Captures` objects alive.
+    let header_matches: Vec<(usize, usize, &str)> = HEADER_REGEX
+        .captures_iter(&text_without_code)
+        .map(|cap| {
+            let full = cap.get(0).unwrap();
+            let header_text = cap.get(1).unwrap().as_str();
+            (full.start(), full.end(), header_text)
+        })
+        .collect();
 
-    for (i, cap) in header_matches.iter().enumerate() {
-        let full_match = cap.get(0).unwrap();
-        let header_text = cap.get(1).unwrap().as_str();
-        let level = header_text.chars().take_while(|&c| c == '#').count() as u32;
+    for (i, &(_, full_end, header_text)) in header_matches.iter().enumerate() {
+        let level = header_text.bytes().take_while(|&b| b == b'#').count() as u32;
         let header_content_raw = header_text.trim_start_matches('#').trim();
         let header_content = restore_code_placeholders(header_content_raw, &code_blocks);
 
@@ -83,21 +88,18 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
         let breadcrumb = build_breadcrumb(&headers);
 
-        let content_start = full_match.end();
         let content_end = if i + 1 < header_matches.len() {
-            header_matches[i + 1].get(0).unwrap().start()
+            header_matches[i + 1].0
         } else {
             text_without_code.len()
         };
 
-        let section_content = &text_without_code[content_start..content_end];
+        let section_content = &text_without_code[full_end..content_end];
 
-        let paragraphs: Vec<&str> = PARAGRAPH_SPLIT_REGEX
+        for paragraph in PARAGRAPH_SPLIT_REGEX
             .split(section_content)
             .filter(|p| !p.trim().is_empty())
-            .collect();
-
-        for paragraph in paragraphs {
+        {
             let restored_content = restore_code_placeholders(paragraph.trim(), &code_blocks);
 
             let mut chunk = Chunk {
