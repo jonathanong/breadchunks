@@ -37,7 +37,7 @@ TypeScript types are included (`index.d.ts`).
 
 Three-phase pipeline:
 
-1. **Phase 1 — Split**: Split at header boundaries. Each section becomes its own chunk tagged with a full heading breadcrumb (`H1 > H2 > H3`). Code blocks are protected — `# comment` inside a fenced block is never treated as a heading.
+1. **Phase 1 — Split**: Split at header boundaries. Each section becomes its own chunk tagged with a full heading breadcrumb (`H1 > H2 > H3`). Backtick-fenced code blocks are protected — `# comment` inside a backtick fence is never treated as a heading.
 2. **Phase 2 — Merge same-breadcrumb**: Merge adjacent chunks that share the same breadcrumb and are below `minLength`.
 3. **Phase 3 — Parent absorption** (bottom-up, h6→h1): Absorb small child sections into their parent when the combined size stays under `maxLength`.
 
@@ -69,7 +69,7 @@ function chunk(
 |---|---|---|
 | `level` | `number` | Heading depth (0 = preface, 1–6 = h1–h6) |
 | `header` | `string?` | Text of the nearest heading |
-| `headers` | `(string \| null)[]` | Full 6-slot heading stack (h1–h6) |
+| `headers` | `(string \| undefined \| null)[]` | Full 6-slot heading stack (h1–h6) |
 | `breadcrumb` | `string` | Human-readable path: `"H1 > H2 > H3"` |
 | `text` | `string` | Chunk body (without the heading line or breadcrumb). To get the full string an embedding model sees, prepend `breadcrumb + "\n\n"` when `breadcrumb` is non-empty. |
 | `length` | `number` | Character count of the full string (including breadcrumb if present) after whitespace collapse. |
