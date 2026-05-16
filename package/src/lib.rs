@@ -37,27 +37,31 @@ fn map_options(options: Option<ChunkOptions>) -> Option<breadchunks::ChunkOption
     })
 }
 
-fn run_batch(inputs: &[String], options: &Option<breadchunks::ChunkOptions>) -> Vec<Vec<Chunk>> {
+fn run_batch(
+    inputs: &[String],
+    options: &Option<breadchunks::ChunkOptions>,
+) -> Result<Vec<Vec<Chunk>>> {
     inputs
         .iter()
         .map(|text| {
             breadchunks::chunk(text, options.clone())
                 .into_iter()
-                .map(|c| Chunk {
-                    level: c.level,
-                    header: c.header,
-                    headers: c.headers,
-                    breadcrumb: c.breadcrumb,
-                    text: c.text,
-                    length: {
-                        assert!(
-                            c.length <= u32::MAX as usize,
-                            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding"
-                        );
-                        c.length as u32 // usize→u32 narrowing for napi; docs >4 GiB unsupported on Node binding
-                    },
+                .map(|c| {
+                    if c.length > u32::MAX as usize {
+                        return Err(Error::from_reason(
+                            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding",
+                        ));
+                    }
+                    Ok(Chunk {
+                        level: c.level,
+                        header: c.header,
+                        headers: c.headers,
+                        breadcrumb: c.breadcrumb,
+                        text: c.text,
+                        length: c.length as u32,
+                    })
                 })
-                .collect()
+                .collect::<Result<Vec<Chunk>>>()
         })
         .collect()
 }
@@ -81,7 +85,7 @@ impl Task for ChunkTask {
                 TaskInput::String(s) => Ok(s),
             })
             .collect();
-        Ok(run_batch(&decoded?, &self.options))
+        run_batch(&decoded?, &self.options)
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {

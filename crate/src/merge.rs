@@ -1,6 +1,8 @@
 use super::types::Chunk;
 use super::utils::{header_is_superset_of, set_length};
 
+const HASHES: &str = "######";
+
 fn should_merge(a_length: usize, b_length: usize, min_length: usize, max_length: usize) -> bool {
     if a_length >= min_length && b_length >= min_length {
         return false;
@@ -26,7 +28,9 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                 if prev.breadcrumb == chunk.breadcrumb
                     && should_merge(prev.length, chunk.length, min_length, max_length)
                 {
-                    prev.text = format!("{}\n\n{}", prev.text, chunk.text);
+                    prev.text.reserve(chunk.text.len() + 2);
+                    prev.text.push_str("\n\n");
+                    prev.text.push_str(&chunk.text);
                     set_length(&mut prev);
                     current = Some(prev);
                     continue;
@@ -58,42 +62,40 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
     for level in (1..=6).rev() {
         let mut merged = Vec::with_capacity(result.len());
-        let mut i = 0;
+        let mut iter = std::mem::take(&mut result).into_iter().peekable();
 
-        while i < result.len() {
-            if result[i].level == level && result[i].length < max_length {
-                let mut current = result[i].clone();
-                let parent_headers = current.headers.clone();
-                i += 1;
-
-                while i < result.len() {
-                    let is_child = result[i].level > level
-                        && header_is_superset_of(&parent_headers, &result[i].headers);
+        while let Some(mut current) = iter.next() {
+            if current.level == level && current.length < max_length {
+                while let Some(next) = iter.peek() {
+                    let is_child = next.level > level
+                        && header_is_superset_of(&current.headers, &next.headers);
 
                     if !is_child {
                         break;
                     }
 
-                    if should_merge(current.length, result[i].length, min_length, max_length) {
-                        let child = &result[i];
-                        let header_prefix = "#".repeat(child.level as usize);
-                        let child_header = child.header.as_deref().unwrap_or("");
-
-                        current.text = format!(
-                            "{}\n\n{} {}\n\n{}",
-                            current.text, header_prefix, child_header, child.text
-                        );
-                        set_length(&mut current);
-                        i += 1;
-                    } else {
+                    if !should_merge(current.length, next.length, min_length, max_length) {
                         break;
                     }
+
+                    let child = iter.next().unwrap();
+                    let header_prefix = &HASHES[..child.level.min(6) as usize];
+                    let child_header = child.header.as_deref().unwrap_or("");
+                    current.text.reserve(
+                        2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
+                    );
+                    current.text.push_str("\n\n");
+                    current.text.push_str(header_prefix);
+                    current.text.push(' ');
+                    current.text.push_str(child_header);
+                    current.text.push_str("\n\n");
+                    current.text.push_str(&child.text);
+                    set_length(&mut current);
                 }
 
                 merged.push(current);
             } else {
-                merged.push(result[i].clone());
-                i += 1;
+                merged.push(current);
             }
         }
 
