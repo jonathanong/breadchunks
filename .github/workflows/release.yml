@@ -230,15 +230,10 @@ jobs:
           gh release create "$tag" --title "$tag" --generate-notes
 
       - name: Publish npm package
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         shell: bash
         working-directory: package
         run: |
           set -euo pipefail
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            export NODE_AUTH_TOKEN="$NPM_TOKEN"
-          fi
           version="${{ needs.prepare.outputs.version }}"
           if npm view "breadchunks@$version" version >/dev/null 2>&1; then
             echo "breadchunks $version is already on npm; skipping"

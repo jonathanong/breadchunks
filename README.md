@@ -132,7 +132,7 @@ Releases are managed via the [Release workflow](.github/workflows/release.yml). 
 2. Cross-compiles the native module for all supported platforms.
 3. Publishes the Rust crate to [crates.io](https://crates.io/crates/breadchunks) and the Node package to [npm](https://www.npmjs.com/package/breadchunks).
 
-**Required secrets:** `RELEASE_TOKEN` (PAT with push access), `CARGO_REGISTRY_TOKEN`, `NPM_TOKEN`, `CODECOV_TOKEN`.
+**Required secrets:** `RELEASE_TOKEN` (PAT with push access), `CARGO_REGISTRY_TOKEN`, `CODECOV_TOKEN`. npm publishing uses [Trusted Publishing](https://docs.npmjs.com/generating-provenance-statements) (OIDC) — no `NPM_TOKEN` needed.
 
 ## License
 
