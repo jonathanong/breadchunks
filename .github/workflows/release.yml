@@ -198,7 +198,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
+          registry-url: https://registry.npmjs.org
 
       - name: Download all native binaries
         uses: actions/download-artifact@v8
@@ -237,5 +238,5 @@ jobs:
           if npm view "breadchunks@$version" version >/dev/null 2>&1; then
             echo "breadchunks $version is already on npm; skipping"
           else
-            npm publish --provenance --access public
+            npm publish --access public
           fi
