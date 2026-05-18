@@ -66,11 +66,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         .find_iter(&text_without_code)
         .map(|m| {
             let full_text = m.as_str();
-            let header_text = if full_text.starts_with('\n') {
-                &full_text[1..]
-            } else {
-                full_text
-            };
+            let header_text = full_text.strip_prefix('\n').unwrap_or(full_text);
             (m.start(), m.end(), header_text)
         })
         .collect();
