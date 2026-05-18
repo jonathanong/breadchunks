@@ -60,14 +60,18 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         None,
     ];
 
-    // Collect only the byte positions and header text slice we actually need —
-    // cheaper than keeping full `Captures` objects alive.
+    // Collect only the byte positions and header text slice we actually need.
+    // Using `find_iter` avoids the overhead of `Captures` objects.
     let header_matches: Vec<(usize, usize, &str)> = HEADER_REGEX
-        .captures_iter(&text_without_code)
-        .map(|cap| {
-            let full = cap.get(0).unwrap();
-            let header_text = cap.get(1).unwrap().as_str();
-            (full.start(), full.end(), header_text)
+        .find_iter(&text_without_code)
+        .map(|m| {
+            let full_text = m.as_str();
+            let header_text = if full_text.starts_with('\n') {
+                &full_text[1..]
+            } else {
+                full_text
+            };
+            (m.start(), m.end(), header_text)
         })
         .collect();
 
