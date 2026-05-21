@@ -66,21 +66,12 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
         while let Some(mut current) = iter.next() {
             if current.level == level && current.length < max_length {
-                while let Some(next) = iter.peek() {
+                while let Some(child) = iter.next_if(|next| {
                     let is_child = next.level > level
                         && header_is_superset_of(&current.headers, &next.headers);
 
-                    if !is_child {
-                        break;
-                    }
-
-                    if !should_merge(current.length, next.length, min_length, max_length) {
-                        break;
-                    }
-
-                    let Some(child) = iter.next() else {
-                        break;
-                    };
+                    is_child && should_merge(current.length, next.length, min_length, max_length)
+                }) {
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
                     let child_header = child.header.as_deref().unwrap_or("");
                     current.text.reserve(
