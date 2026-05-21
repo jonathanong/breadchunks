@@ -9,7 +9,7 @@ use super::types::Chunk;
 /// to the count) is included only when both sides normalize to a non-zero
 /// length. Zero allocations.
 pub fn set_length(chunk: &mut Chunk) {
-    let b = default_length_counter(&chunk.breadcrumb);
+    let b = default_length_counter(chunk.breadcrumb.as_str());
     let t = default_length_counter(&chunk.text);
     chunk.length = if b == 0 || t == 0 { b + t } else { b + 1 + t };
 }
@@ -87,8 +87,8 @@ mod tests {
         Chunk {
             level: 1,
             header: None,
-            headers: vec![None; 6],
-            breadcrumb: breadcrumb.to_string(),
+            headers: std::sync::Arc::new(vec![None; 6]),
+            breadcrumb: std::sync::Arc::new(breadcrumb.to_string()),
             text: text.to_string(),
             length: 0,
         }
