@@ -422,6 +422,37 @@ fn split_preface_without_title() {
     assert!(preface.header.is_none());
 }
 
+#[test]
+fn split_header_at_document_start() {
+    let chunks = chunk(
+        "# H1\n\nFirst paragraph.\n\n## H2\n\nSecond paragraph.",
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(chunks[0].level, 1);
+    assert_eq!(chunks[1].level, 2);
+    assert_eq!(chunks[0].header, Some("H1".to_string()));
+    assert_eq!(chunks[1].header, Some("H2".to_string()));
+}
+
+#[test]
+fn split_header_with_crlf_line_endings() {
+    let chunks = chunk(
+        "# H1\r\n\r\nParagraph one.\r\n\r\n## H2\r\n\r\nParagraph two.",
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(chunks[0].level, 1);
+    assert_eq!(chunks[1].level, 2);
+    assert_eq!(chunks[0].header, Some("H1".to_string()));
+    assert_eq!(chunks[1].header, Some("H2".to_string()));
+    assert!(chunks.iter().all(|c| c.level > 0));
+}
+
 // ── code-block extraction — placeholder correctness ───────────────────────
 
 #[test]

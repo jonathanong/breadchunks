@@ -8,7 +8,11 @@ static CODE_BLOCK_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"```[\s\S]*?```|`[^`]+`").expect("BUG: invalid code block regex"));
 
 static HEADER_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?:^|\n)(#{1,6}\s+.+)").expect("BUG: invalid header regex"));
+    // Match markdown headers that are at the start of the document or after a newline.
+    // We intentionally keep only the full match and strip a leading '\n' in code.
+    LazyLock::new(|| {
+        Regex::new(r"(?:^|\n)(?:#{1,6}\s+.+)").expect("BUG: invalid header regex")
+    });
 
 static PARAGRAPH_SPLIT_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\n\s*\n").expect("BUG: invalid paragraph split regex"));
@@ -60,18 +64,19 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         None,
     ];
 
-    // Collect only the byte positions and header text slice we actually need —
-    // cheaper than keeping full `Captures` objects alive.
+    // Collect only the byte positions and header text slice we actually need.
+    // Using `find_iter` avoids the overhead of `Captures` objects.
     let header_matches: Vec<(usize, usize, &str)> = HEADER_REGEX
-        .captures_iter(&text_without_code)
-        .map(|cap| {
-            let full = cap.get(0).unwrap();
-            let header_text = cap.get(1).unwrap().as_str();
-            (full.start(), full.end(), header_text)
+        .find_iter(&text_without_code)
+        .map(|m| {
+            let raw = m.as_str();
+            let header_text = raw.strip_prefix('\n').unwrap_or(raw);
+            (m.start(), m.end(), header_text)
         })
         .collect();
 
     for (i, &(_, full_end, header_text)) in header_matches.iter().enumerate() {
+        let header_text = header_text.trim_end_matches('\r');
         let level = header_text.bytes().take_while(|&b| b == b'#').count() as u32;
         let header_content_raw = header_text.trim_start_matches('#').trim();
         let header_content = restore_code_placeholders(header_content_raw, &code_blocks);
