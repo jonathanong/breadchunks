@@ -94,7 +94,7 @@ mod tests {
         }
     }
     #[test]
-    fn set_length_empty() {
+    fn set_length_empty_breadcrumb_nonempty_text() {
         let mut c = chunk("", "hello world");
         set_length(&mut c);
         assert_eq!(c.length, 11);
