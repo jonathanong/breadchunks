@@ -13,6 +13,7 @@ pub struct ChunkOptions {
 }
 
 #[napi(object)]
+#[derive(Debug)]
 pub struct Chunk {
     pub level: u32,
     pub header: Option<String>,
@@ -37,31 +38,31 @@ fn map_options(options: Option<ChunkOptions>) -> Option<breadchunks::ChunkOption
     })
 }
 
+fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, String> {
+    let length = u32::try_from(c.length).map_err(|_| {
+        "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding".to_string()
+    })?;
+    Ok(Chunk {
+        level: c.level,
+        header: c.header,
+        headers: c.headers.as_ref().clone(),
+        breadcrumb: c.breadcrumb.to_string(),
+        text: c.text,
+        length,
+    })
+}
+
 fn run_batch(
     inputs: &[String],
     options: &Option<breadchunks::ChunkOptions>,
-) -> Result<Vec<Vec<Chunk>>> {
+) -> std::result::Result<Vec<Vec<Chunk>>, String> {
     inputs
         .iter()
         .map(|text| {
             breadchunks::chunk(text, options.clone())
                 .into_iter()
-                .map(|c| {
-                    if c.length > u32::MAX as usize {
-                        return Err(Error::from_reason(
-                            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding",
-                        ));
-                    }
-                    Ok(Chunk {
-                        level: c.level,
-                        header: c.header,
-                        headers: c.headers.as_ref().clone(),
-                        breadcrumb: c.breadcrumb.to_string(),
-                        text: c.text,
-                        length: c.length as u32,
-                    })
-                })
-                .collect::<Result<Vec<Chunk>>>()
+                .map(map_chunk)
+                .collect::<std::result::Result<Vec<Chunk>, String>>()
         })
         .collect()
 }
@@ -85,7 +86,7 @@ impl Task for ChunkTask {
                 TaskInput::String(s) => Ok(s),
             })
             .collect();
-        run_batch(&decoded?, &self.options)
+        run_batch(&decoded?, &self.options).map_err(Error::from_reason)
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
@@ -134,5 +135,32 @@ mod tests {
         assert_eq!(result.max_length, Some(100));
         assert_eq!(result.phase, Some(2));
         assert_eq!(result.title.as_deref(), Some("Test Title"));
+    }
+
+    #[test]
+    fn test_map_chunk_valid_length() {
+        let mut chunks = breadchunks::chunk("# Test\n\nHello, world!", None);
+        let chunk = chunks.remove(0);
+
+        let result = map_chunk(chunk).unwrap();
+        assert_eq!(result.level, 1);
+        assert_eq!(result.header, Some("Test".to_string()));
+        assert_eq!(result.breadcrumb, "Test");
+        assert_eq!(result.text, "Hello, world!");
+        assert_eq!(result.length, 18);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn test_map_chunk_exceeds_u32_max() {
+        let mut chunks = breadchunks::chunk("Too long", None);
+        let mut chunk = chunks.remove(0);
+        chunk.length = (u32::MAX as usize) + 1;
+
+        let err = map_chunk(chunk).unwrap_err();
+        assert_eq!(
+            err,
+            "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding"
+        );
     }
 }
