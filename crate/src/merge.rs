@@ -99,3 +99,14 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_merge_phase3_empty() {
+        let result = merge_phase3(vec![], 100, 1000);
+        assert!(result.is_empty());
+    }
+}
