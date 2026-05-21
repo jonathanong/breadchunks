@@ -78,7 +78,9 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                         break;
                     }
 
-                    let child = iter.next().unwrap();
+                    let Some(child) = iter.next() else {
+                        break;
+                    };
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
                     let child_header = child.header.as_deref().unwrap_or("");
                     current.text.reserve(
