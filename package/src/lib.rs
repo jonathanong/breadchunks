@@ -156,7 +156,6 @@ mod tests {
         let mut chunks = breadchunks::chunk("Too long", None);
         let mut chunk = chunks.remove(0);
         chunk.length = (u32::MAX as usize) + 1;
-
         let err = map_chunk(chunk).unwrap_err();
         assert_eq!(
             err,
