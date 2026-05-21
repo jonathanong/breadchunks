@@ -34,24 +34,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         {
             let restored_content = restore_code_placeholders(paragraph.trim(), &code_blocks);
 
-            let mut chunk = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-                breadcrumb: title.unwrap_or("").to_string(),
-                text: restored_content,
-                length: 0,
-            };
-
-            set_length(&mut chunk);
-            chunks.push(chunk);
+            chunks.push(create_level_0_chunk(title, restored_content));
         }
     }
 
@@ -119,23 +102,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         let restored_content = restore_code_placeholders(text_without_code.trim(), &code_blocks);
 
         if !restored_content.trim().is_empty() {
-            let mut chunk = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-                breadcrumb: title.unwrap_or("").to_string(),
-                text: restored_content,
-                length: 0,
-            };
-            set_length(&mut chunk);
-            chunks.push(chunk);
+            chunks.push(create_level_0_chunk(title, restored_content));
         }
     }
 
@@ -166,4 +133,24 @@ fn build_breadcrumb(headers: &[Option<String>]) -> String {
         .cloned()
         .collect::<Vec<_>>()
         .join(" > ")
+}
+
+fn create_level_0_chunk(title: Option<&str>, restored_content: String) -> Chunk {
+    let mut chunk = Chunk {
+        level: 0,
+        header: title.map(std::string::ToString::to_string),
+        headers: vec![
+            title.map(std::string::ToString::to_string),
+            None,
+            None,
+            None,
+            None,
+            None,
+        ],
+        breadcrumb: title.unwrap_or("").to_string(),
+        text: restored_content,
+        length: 0,
+    };
+    set_length(&mut chunk);
+    chunk
 }
