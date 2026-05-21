@@ -453,6 +453,24 @@ fn split_header_with_crlf_line_endings() {
     assert!(chunks.iter().all(|c| c.level > 0));
 }
 
+#[test]
+fn split_unclosed_code_block() {
+    // An unclosed code block doesn't match CODE_BLOCK_REGEX, so it is treated as
+    // normal text. This means PARAGRAPH_SPLIT_REGEX will split the text inside it
+    // if there are empty lines.
+    let text = "# H1\n\n```\nUnclosed block\n\nStill going";
+    let chunks = chunk(
+        text,
+        Some(ChunkOptions {
+            phase: Some(1),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(chunks.len(), 2);
+    assert_eq!(chunks[0].text, "```\nUnclosed block");
+    assert_eq!(chunks[1].text, "Still going");
+}
+
 // ── code-block extraction — placeholder correctness ───────────────────────
 
 #[test]
