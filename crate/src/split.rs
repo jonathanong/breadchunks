@@ -112,8 +112,7 @@ fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
 fn build_breadcrumb(headers: &[Option<String>]) -> String {
     headers
         .iter()
-        .filter_map(|h| h.as_ref())
-        .cloned()
+        .filter_map(|h| h.as_deref())
         .collect::<Vec<_>>()
         .join(" > ")
 }
