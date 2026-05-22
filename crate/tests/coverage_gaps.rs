@@ -467,7 +467,11 @@ fn split_unclosed_code_block() {
         }),
     );
     assert_eq!(chunks.len(), 2);
+    assert_eq!(chunks[0].level, 1);
+    assert_eq!(chunks[0].header, Some("H1".to_string()));
     assert_eq!(chunks[0].text, "```\nUnclosed block");
+    assert_eq!(chunks[1].level, 1);
+    assert_eq!(chunks[1].header, Some("H1".to_string()));
     assert_eq!(chunks[1].text, "Still going");
 }
 
