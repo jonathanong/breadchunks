@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use super::types::Chunk;
 use super::utils::{header_is_superset_of, set_length};
 
@@ -77,12 +79,12 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
                     );
-                    current.text.push_str("\n\n");
-                    current.text.push_str(header_prefix);
-                    current.text.push(' ');
-                    current.text.push_str(child_header);
-                    current.text.push_str("\n\n");
-                    current.text.push_str(&child.text);
+                    write!(
+                        &mut current.text,
+                        "\n\n{} {}\n\n{}",
+                        header_prefix, child_header, child.text
+                    )
+                    .expect("BUG: failed to write merged child section");
                     set_length(&mut current);
                 }
 
