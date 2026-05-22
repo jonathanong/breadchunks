@@ -33,7 +33,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
             &code_blocks,
             0,
             title,
-            &title_owned,
+            &headers,
             &mut chunks,
         );
     }
@@ -81,7 +81,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
             &code_blocks,
             0,
             title,
-            &title_owned,
+            &headers,
             &mut chunks,
         );
     }
