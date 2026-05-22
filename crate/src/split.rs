@@ -28,13 +28,12 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
     if let Some(first_match) = first_header {
         let preface_content = &text_without_code[..first_match.start()];
-        process_paragraphs(
+        split_paragraphs(
             preface_content,
             &code_blocks,
             0,
             title,
             &headers,
-            title.unwrap_or(""),
             &mut chunks,
         );
     }
@@ -59,7 +58,6 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         headers[(level - 1) as usize] = Some(header_content.clone());
         headers[level as usize..].fill(None);
 
-        let breadcrumb = build_breadcrumb(&headers);
         let content_end = if i + 1 < header_matches.len() {
             header_matches[i + 1].0
         } else {
@@ -67,25 +65,25 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         };
 
         let section_content = &text_without_code[full_end..content_end];
-        process_paragraphs(
+        split_paragraphs(
             section_content,
             &code_blocks,
             level,
             Some(header_content.as_str()),
             &headers,
-            &breadcrumb,
             &mut chunks,
         );
     }
 
     if header_matches.is_empty() {
-        let restored_content = restore_code_placeholders(text_without_code.trim(), &code_blocks);
-        if !restored_content.trim().is_empty() {
-            chunks.push(create_level_0_chunk(
-                title_owned.as_deref(),
-                restored_content,
-            ));
-        }
+        split_paragraphs(
+            &text_without_code,
+            &code_blocks,
+            0,
+            title,
+            &headers,
+            &mut chunks,
+        );
     }
 
     chunks
@@ -117,49 +115,35 @@ fn build_breadcrumb(headers: &[Option<String>]) -> String {
         .join(" > ")
 }
 
-fn create_level_0_chunk(title: Option<&str>, restored_content: String) -> Chunk {
-    let title = title.map(std::string::ToString::to_string);
-    let mut chunk = Chunk {
-        level: 0,
-        header: title.clone(),
-        headers: {
-            let mut headers = vec![None; 6];
-            headers[0] = title.clone();
-            headers
-        },
-        breadcrumb: title.clone().unwrap_or_default(),
-        text: restored_content,
-        length: 0,
-    };
-    set_length(&mut chunk);
-    chunk
-}
-
-fn process_paragraphs(
+fn split_paragraphs(
     content: &str,
     code_blocks: &[String],
     level: u32,
     header: Option<&str>,
     headers: &[Option<String>],
-    breadcrumb: &str,
     chunks: &mut Vec<Chunk>,
 ) {
-    for paragraph in PARAGRAPH_SPLIT_REGEX
+    let mut paragraphs = PARAGRAPH_SPLIT_REGEX
         .split(content)
         .filter(|p| !p.trim().is_empty())
-    {
-        let restored_content = restore_code_placeholders(paragraph.trim(), code_blocks);
+        .peekable();
 
-        let mut chunk = Chunk {
+    if paragraphs.peek().is_some() {
+        let breadcrumb = build_breadcrumb(headers);
+        let prototype = Chunk {
             level,
             header: header.map(std::string::ToString::to_string),
-            headers: headers.to_vec(),
-            breadcrumb: breadcrumb.to_string(),
-            text: restored_content,
+            headers: std::sync::Arc::new(headers.to_vec()),
+            breadcrumb: std::sync::Arc::new(breadcrumb),
+            text: String::new(),
             length: 0,
         };
 
-        set_length(&mut chunk);
-        chunks.push(chunk);
+        for paragraph in paragraphs {
+            let mut chunk = prototype.clone();
+            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks);
+            set_length(&mut chunk);
+            chunks.push(chunk);
+        }
     }
 }

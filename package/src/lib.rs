@@ -55,8 +55,8 @@ fn run_batch(
                     Ok(Chunk {
                         level: c.level,
                         header: c.header,
-                        headers: c.headers,
-                        breadcrumb: c.breadcrumb,
+                        headers: c.headers.as_ref().clone(),
+                        breadcrumb: c.breadcrumb.to_string(),
                         text: c.text,
                         length: c.length as u32,
                     })
