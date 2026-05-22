@@ -60,6 +60,10 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 /// only the parent's heading path. To enumerate all headings inside a merged
 /// chunk, scan `chunk.text` for ATX headers.
 pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) -> Vec<Chunk> {
+    if chunks.is_empty() {
+        return chunks;
+    }
+
     let mut result = chunks;
 
     for level in (1..=6).rev() {
