@@ -55,7 +55,7 @@ const isMuslFromChildProcess = () => {
   try {
     return (isMuslFromChildProcess.cache ??= require('node:child_process').execFileSync('ldd', ['--version'], { encoding: 'utf8' }).includes('musl'))
   } catch (e) {
-    // If we reach this case, we don't know if the system is musl or not, so is better to just fallback to false
+    // If we reach this case, we don't know if the system is musl or not, so it is better to just fall back to false
     return false
   }
 }
@@ -559,16 +559,32 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
 }
 
 if (!nativeBinding) {
+  // Final attempt: unsuffixed file produced by `napi build` without --platform
+  try {
+    nativeBinding = require('./breadchunks.node')
+  } catch (_e) {
+    // not present
+  }
+}
+
+if (!nativeBinding) {
   if (loadErrors.length > 0) {
+    const isUnsupported =
+      loadErrors.some((e) => /^Unsupported (OS|architecture)/i.test(e.message)) ||
+      loadErrors.every((e) => e.code === 'MODULE_NOT_FOUND')
+    if (isUnsupported) {
+      throw new Error(
+        `No prebuilt binary for ${process.platform}/${process.arch}. Build from source with: \`napi build --release\``,
+        { cause: loadErrors[loadErrors.length - 1] },
+      )
+    }
     throw new Error(
-      `Cannot find native binding. ` +
-        `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
-        'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
+      `Failed to load native binding for ${process.platform}/${process.arch}. ` +
+        `Try \`npm i\` again after removing both package-lock.json and node_modules directory.`,
       {
-        cause: loadErrors.reduce((err, cur) => {
-          cur.cause = err
-          return cur
-        }),
+        cause: [...loadErrors].reduce((cause, e) =>
+          new Error(e instanceof Error ? e.message : String(e), { cause }),
+        ),
       },
     )
   }
