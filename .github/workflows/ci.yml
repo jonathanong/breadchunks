@@ -41,6 +41,14 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      - name: Install Node dependencies
+        working-directory: package
+        run: npm install
+
+      - name: Build native module
+        working-directory: package
+        run: npm run build:debug
+
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
@@ -57,14 +65,6 @@ jobs:
           files: target/llvm-cov/lcov.info
           flags: rust
           fail_ci_if_error: true
-
-      - name: Install Node dependencies
-        working-directory: package
-        run: npm install
-
-      - name: Build native module
-        working-directory: package
-        run: npm run build:debug
 
       - name: Run Node tests
         working-directory: package

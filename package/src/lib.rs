@@ -110,3 +110,29 @@ pub fn chunk(
         options: map_options(options),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_options_none() {
+        assert!(map_options(None).is_none());
+    }
+
+    #[test]
+    fn test_map_options_some() {
+        let input = ChunkOptions {
+            min_length: Some(10),
+            max_length: Some(100),
+            phase: Some(2),
+            title: Some("Test Title".to_string()),
+        };
+
+        let result = map_options(Some(input)).expect("Expected Some");
+        assert_eq!(result.min_length, Some(10));
+        assert_eq!(result.max_length, Some(100));
+        assert_eq!(result.phase, Some(2));
+        assert_eq!(result.title, Some("Test Title".to_string()));
+    }
+}
