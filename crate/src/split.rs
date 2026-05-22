@@ -28,35 +28,14 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
     if let Some(first_match) = first_header {
         let preface_content = &text_without_code[..first_match.start()];
-        let mut paragraphs = PARAGRAPH_SPLIT_REGEX
-            .split(preface_content)
-            .filter(|p| !p.trim().is_empty())
-            .peekable();
-
-        if paragraphs.peek().is_some() {
-            let prototype = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: std::sync::Arc::new(vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ]),
-                breadcrumb: std::sync::Arc::new(title.unwrap_or("").to_string()),
-                text: String::new(),
-                length: 0,
-            };
-
-            for paragraph in paragraphs {
-                let mut chunk = prototype.clone();
-                chunk.text = restore_code_placeholders(paragraph.trim(), &code_blocks);
-                set_length(&mut chunk);
-                chunks.push(chunk);
-            }
-        }
+        split_paragraphs(
+            preface_content,
+            &code_blocks,
+            0,
+            title,
+            &title_owned,
+            &mut chunks,
+        );
     }
 
     // Collect only the byte positions and header text slice we actually need.
@@ -86,60 +65,25 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         };
 
         let section_content = &text_without_code[full_end..content_end];
-        let mut paragraphs = PARAGRAPH_SPLIT_REGEX
-            .split(section_content)
-            .filter(|p| !p.trim().is_empty())
-            .peekable();
-
-        if paragraphs.peek().is_some() {
-            let prototype = Chunk {
-                level,
-                header: Some(header_content.clone()),
-                headers: std::sync::Arc::new(headers.clone()),
-                breadcrumb: std::sync::Arc::new(build_breadcrumb(&headers)),
-                text: String::new(),
-                length: 0,
-            };
-
-            for paragraph in paragraphs {
-                let mut chunk = prototype.clone();
-                chunk.text = restore_code_placeholders(paragraph.trim(), &code_blocks);
-                set_length(&mut chunk);
-                chunks.push(chunk);
-            }
-        }
+        split_paragraphs(
+            section_content,
+            &code_blocks,
+            level,
+            Some(header_content.as_str()),
+            &headers,
+            &mut chunks,
+        );
     }
 
     if header_matches.is_empty() {
-        let mut paragraphs = PARAGRAPH_SPLIT_REGEX
-            .split(text_without_code.trim())
-            .filter(|p| !p.trim().is_empty())
-            .peekable();
-
-        if paragraphs.peek().is_some() {
-            let prototype = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: std::sync::Arc::new(vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ]),
-                breadcrumb: std::sync::Arc::new(title.unwrap_or("").to_string()),
-                text: String::new(),
-                length: 0,
-            };
-
-            for paragraph in paragraphs {
-                let mut chunk = prototype.clone();
-                chunk.text = restore_code_placeholders(paragraph.trim(), &code_blocks);
-                set_length(&mut chunk);
-                chunks.push(chunk);
-            }
-        }
+        split_paragraphs(
+            &text_without_code,
+            &code_blocks,
+            0,
+            title,
+            &title_owned,
+            &mut chunks,
+        );
     }
 
     chunks
@@ -169,4 +113,37 @@ fn build_breadcrumb(headers: &[Option<String>]) -> String {
         .filter_map(|h| h.as_deref())
         .collect::<Vec<_>>()
         .join(" > ")
+}
+
+fn split_paragraphs(
+    content: &str,
+    code_blocks: &[String],
+    level: u32,
+    header: Option<&str>,
+    headers: &[Option<String>],
+    chunks: &mut Vec<Chunk>,
+) {
+    let mut paragraphs = PARAGRAPH_SPLIT_REGEX
+        .split(content)
+        .filter(|p| !p.trim().is_empty())
+        .peekable();
+
+    if paragraphs.peek().is_some() {
+        let breadcrumb = build_breadcrumb(headers);
+        let prototype = Chunk {
+            level,
+            header: header.map(std::string::ToString::to_string),
+            headers: std::sync::Arc::new(headers.to_vec()),
+            breadcrumb: std::sync::Arc::new(breadcrumb),
+            text: String::new(),
+            length: 0,
+        };
+
+        for paragraph in paragraphs {
+            let mut chunk = prototype.clone();
+            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks);
+            set_length(&mut chunk);
+            chunks.push(chunk);
+        }
+    }
 }
