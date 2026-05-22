@@ -18,4 +18,4 @@ name = "breadcrumb_bench"
 harness = false
 
 [dev-dependencies]
-criterion = "0.7.0"
+criterion = "0.5.1"
