@@ -12,3 +12,10 @@ categories = ["text-processing"]
 
 [dependencies]
 regex = "1.11"
+
+[[bench]]
+name = "breadcrumb_bench"
+harness = false
+
+[dev-dependencies]
+criterion = "0.5.1"
