@@ -136,18 +136,16 @@ fn build_breadcrumb(headers: &[Option<String>]) -> String {
 }
 
 fn create_level_0_chunk(title: Option<&str>, restored_content: String) -> Chunk {
+    let title = title.map(std::string::ToString::to_string);
     let mut chunk = Chunk {
         level: 0,
-        header: title.map(std::string::ToString::to_string),
-        headers: vec![
-            title.map(std::string::ToString::to_string),
-            None,
-            None,
-            None,
-            None,
-            None,
-        ],
-        breadcrumb: title.unwrap_or("").to_string(),
+        header: title.clone(),
+        headers: {
+            let mut headers = vec![None; 6];
+            headers[0] = title.clone();
+            headers
+        },
+        breadcrumb: title.clone().unwrap_or_default(),
         text: restored_content,
         length: 0,
     };
