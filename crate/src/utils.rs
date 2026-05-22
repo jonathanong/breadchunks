@@ -29,13 +29,13 @@ pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
         if let Some(end) = remaining.find(SENTINEL) {
             let tag = &remaining[..end];
             remaining = &remaining[end + SENTINEL.len_utf8()..];
-            if let Some(idx_str) = tag.strip_prefix("CODE_BLOCK_") {
-                if let Ok(idx) = idx_str.parse::<usize>() {
-                    if let Some(block) = blocks.get(idx) {
-                        out.push_str(block);
-                        continue;
-                    }
-                }
+            if let Some(block) = tag
+                .strip_prefix("CODE_BLOCK_")
+                .and_then(|idx_str| idx_str.parse::<usize>().ok())
+                .and_then(|idx| blocks.get(idx))
+            {
+                out.push_str(block);
+                continue;
             }
             // Not a valid placeholder — emit the delimiters and tag verbatim.
             out.push(SENTINEL);
@@ -94,7 +94,7 @@ mod tests {
         }
     }
     #[test]
-    fn set_length_empty() {
+    fn set_length_empty_breadcrumb_nonempty_text() {
         let mut c = chunk("", "hello world");
         set_length(&mut c);
         assert_eq!(c.length, 11);

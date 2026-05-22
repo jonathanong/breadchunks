@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use super::types::Chunk;
 use super::utils::{header_is_superset_of, set_length};
 
@@ -58,6 +60,10 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 /// only the parent's heading path. To enumerate all headings inside a merged
 /// chunk, scan `chunk.text` for ATX headers.
 pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) -> Vec<Chunk> {
+    if chunks.is_empty() {
+        return chunks;
+    }
+
     let mut result = chunks;
 
     for level in (1..=6).rev() {
@@ -66,30 +72,23 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
         while let Some(mut current) = iter.next() {
             if current.level == level && current.length < max_length {
-                while let Some(next) = iter.peek() {
+                while let Some(child) = iter.next_if(|next| {
                     let is_child = next.level > level
                         && header_is_superset_of(&current.headers, &next.headers);
 
-                    if !is_child {
-                        break;
-                    }
-
-                    if !should_merge(current.length, next.length, min_length, max_length) {
-                        break;
-                    }
-
-                    let child = iter.next().unwrap();
+                    is_child && should_merge(current.length, next.length, min_length, max_length)
+                }) {
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
                     let child_header = child.header.as_deref().unwrap_or("");
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
                     );
-                    current.text.push_str("\n\n");
-                    current.text.push_str(header_prefix);
-                    current.text.push(' ');
-                    current.text.push_str(child_header);
-                    current.text.push_str("\n\n");
-                    current.text.push_str(&child.text);
+                    write!(
+                        &mut current.text,
+                        "\n\n{} {}\n\n{}",
+                        header_prefix, child_header, child.text
+                    )
+                    .expect("BUG: failed to write merged child section");
                     set_length(&mut current);
                 }
 
@@ -103,4 +102,15 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
     }
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_merge_phase3_empty() {
+        let result = merge_phase3(vec![], 100, 1000);
+        assert!(result.is_empty());
+    }
 }
