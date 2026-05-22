@@ -133,6 +133,6 @@ mod tests {
         assert_eq!(result.min_length, Some(10));
         assert_eq!(result.max_length, Some(100));
         assert_eq!(result.phase, Some(2));
-        assert_eq!(result.title, Some("Test Title".to_string()));
+        assert_eq!(result.title.as_deref(), Some("Test Title"));
     }
 }
