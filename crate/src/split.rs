@@ -83,13 +83,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
         headers[(level - 1) as usize] = Some(header_content.clone());
 
-        for header in headers
-            .iter_mut()
-            .skip(level as usize)
-            .take(6 - level as usize)
-        {
-            *header = None;
-        }
+        headers[level as usize..].fill(None);
 
         let breadcrumb = build_breadcrumb(&headers);
 
