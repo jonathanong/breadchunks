@@ -38,3 +38,12 @@ fn test_mixed_whitespace() {
     // tabs and newlines collapse to single space
     assert_eq!(default_length_counter("a\t\nb"), 3);
 }
+
+#[test]
+fn test_trailing_whitespace() {
+    assert_eq!(default_length_counter("hello "), 5);
+    assert_eq!(default_length_counter("hello  "), 5);
+    assert_eq!(default_length_counter("hello \t\n "), 5);
+    assert_eq!(default_length_counter("   "), 0);
+    assert_eq!(default_length_counter(""), 0);
+}
