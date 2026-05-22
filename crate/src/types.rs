@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct Chunk {
@@ -7,9 +9,9 @@ pub struct Chunk {
     pub header: Option<String>,
     /// Six-slot heading stack (indices 0–5 = H1–H6). Each slot is `Some` if
     /// that heading level is currently active, `None` otherwise.
-    pub headers: Vec<Option<String>>,
+    pub headers: Arc<Vec<Option<String>>>,
     /// Human-readable breadcrumb path, e.g. `"Introduction > Background"`.
-    pub breadcrumb: String,
+    pub breadcrumb: Arc<String>,
     /// Paragraph body of the chunk. Does **not** include the heading line or
     /// the breadcrumb — those are in `header`/`headers`/`breadcrumb`.
     /// To produce the string an embedding model sees, prepend

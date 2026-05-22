@@ -12,3 +12,10 @@ categories = ["text-processing"]
 
 [dependencies]
 regex = "1.11"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "split_bench"
+harness = false

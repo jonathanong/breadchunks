@@ -29,7 +29,7 @@ fn set_length_empty_breadcrumb() {
     // Level-0 chunks (preface, no headers) have empty breadcrumb
     let chunks = chunk("Plain text, no headers.", None);
     assert_eq!(chunks.len(), 1);
-    assert_eq!(chunks[0].breadcrumb, "");
+    assert_eq!(chunks[0].breadcrumb.as_str(), "");
     // length must equal char count of text (no breadcrumb prefix)
     assert_eq!(chunks[0].length, default_length_counter(&chunks[0].text));
 }
@@ -304,7 +304,7 @@ fn split_no_headers_nonempty_text() {
     let chunks = chunk("Hello, world!", None);
     assert_eq!(chunks.len(), 1);
     assert_eq!(chunks[0].level, 0);
-    assert_eq!(chunks[0].breadcrumb, "");
+    assert_eq!(chunks[0].breadcrumb.as_str(), "");
 }
 
 #[test]
@@ -317,7 +317,7 @@ fn split_no_headers_with_title() {
             ..Default::default()
         }),
     );
-    assert_eq!(chunks[0].breadcrumb, "My Doc");
+    assert_eq!(chunks[0].breadcrumb.as_str(), "My Doc");
     assert_eq!(chunks[0].header, Some("My Doc".to_string()));
     assert_eq!(chunks[0].headers[0], Some("My Doc".to_string()));
 }
@@ -349,7 +349,7 @@ fn split_header_level_6_clears_nothing_below() {
         }),
     );
     assert_eq!(chunks[0].level, 6);
-    assert_eq!(chunks[0].breadcrumb, "H6");
+    assert_eq!(chunks[0].breadcrumb.as_str(), "H6");
 }
 
 #[test]
@@ -402,7 +402,7 @@ fn split_preface_with_title() {
         }),
     );
     let preface = chunks.iter().find(|c| c.text.contains("Intro.")).unwrap();
-    assert_eq!(preface.breadcrumb, "Doc");
+    assert_eq!(preface.breadcrumb.as_str(), "Doc");
     assert_eq!(preface.header, Some("Doc".to_string()));
 }
 
@@ -418,7 +418,7 @@ fn split_preface_without_title() {
         }),
     );
     let preface = chunks.iter().find(|c| c.text.contains("Intro.")).unwrap();
-    assert_eq!(preface.breadcrumb, "");
+    assert_eq!(preface.breadcrumb.as_str(), "");
     assert!(preface.header.is_none());
 }
 

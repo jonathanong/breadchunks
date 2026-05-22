@@ -18,6 +18,46 @@ static PARAGRAPH_SPLIT_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\n\s*\n").expect("BUG: invalid paragraph split regex"));
 
 /// Phase 1: Split markdown into one chunk per paragraph, grouped under its nearest header.
+fn process_paragraphs(
+    section_content: &str,
+    code_blocks: &[String],
+    prototype: Chunk,
+    chunks: &mut Vec<Chunk>,
+) {
+    let mut paragraphs = PARAGRAPH_SPLIT_REGEX
+        .split(section_content)
+        .filter(|p| !p.trim().is_empty())
+        .peekable();
+
+    if paragraphs.peek().is_some() {
+        for paragraph in paragraphs {
+            let mut chunk = prototype.clone();
+            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks);
+            set_length(&mut chunk);
+            chunks.push(chunk);
+        }
+    }
+}
+
+fn title_prototype(title: Option<&str>) -> Chunk {
+    Chunk {
+        level: 0,
+        header: title.map(std::string::ToString::to_string),
+        headers: std::sync::Arc::new(vec![
+            title.map(std::string::ToString::to_string),
+            None,
+            None,
+            None,
+            None,
+            None,
+        ]),
+        breadcrumb: std::sync::Arc::new(title.unwrap_or("").to_string()),
+        text: String::new(),
+        length: 0,
+    }
+}
+
+/// Phase 1: Split markdown into one chunk per paragraph, grouped under its nearest header.
 pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     let mut chunks = Vec::new();
 
@@ -27,32 +67,12 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
     if let Some(first_match) = first_header {
         let preface_content = &text_without_code[..first_match.start()];
-
-        for paragraph in PARAGRAPH_SPLIT_REGEX
-            .split(preface_content)
-            .filter(|p| !p.trim().is_empty())
-        {
-            let restored_content = restore_code_placeholders(paragraph.trim(), &code_blocks);
-
-            let mut chunk = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-                breadcrumb: title.unwrap_or("").to_string(),
-                text: restored_content,
-                length: 0,
-            };
-
-            set_length(&mut chunk);
-            chunks.push(chunk);
-        }
+        process_paragraphs(
+            preface_content,
+            &code_blocks,
+            title_prototype(title),
+            &mut chunks,
+        );
     }
 
     let mut headers: Vec<Option<String>> = vec![
@@ -91,8 +111,6 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
             *header = None;
         }
 
-        let breadcrumb = build_breadcrumb(&headers);
-
         let content_end = if i + 1 < header_matches.len() {
             header_matches[i + 1].0
         } else {
@@ -100,49 +118,24 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         };
 
         let section_content = &text_without_code[full_end..content_end];
-
-        for paragraph in PARAGRAPH_SPLIT_REGEX
-            .split(section_content)
-            .filter(|p| !p.trim().is_empty())
-        {
-            let restored_content = restore_code_placeholders(paragraph.trim(), &code_blocks);
-
-            let mut chunk = Chunk {
-                level,
-                header: Some(header_content.to_string()),
-                headers: headers.clone(),
-                breadcrumb: breadcrumb.clone(),
-                text: restored_content,
-                length: 0,
-            };
-
-            set_length(&mut chunk);
-            chunks.push(chunk);
-        }
+        let prototype = Chunk {
+            level,
+            header: Some(header_content.clone()),
+            headers: std::sync::Arc::new(headers.clone()),
+            breadcrumb: std::sync::Arc::new(build_breadcrumb(&headers)),
+            text: String::new(),
+            length: 0,
+        };
+        process_paragraphs(section_content, &code_blocks, prototype, &mut chunks);
     }
 
     if header_matches.is_empty() {
-        let restored_content = restore_code_placeholders(text_without_code.trim(), &code_blocks);
-
-        if !restored_content.trim().is_empty() {
-            let mut chunk = Chunk {
-                level: 0,
-                header: title.map(std::string::ToString::to_string),
-                headers: vec![
-                    title.map(std::string::ToString::to_string),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-                breadcrumb: title.unwrap_or("").to_string(),
-                text: restored_content,
-                length: 0,
-            };
-            set_length(&mut chunk);
-            chunks.push(chunk);
-        }
+        process_paragraphs(
+            text_without_code.trim(),
+            &code_blocks,
+            title_prototype(title),
+            &mut chunks,
+        );
     }
 
     chunks
