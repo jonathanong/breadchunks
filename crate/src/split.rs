@@ -81,7 +81,10 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     if header_matches.is_empty() {
         let restored_content = restore_code_placeholders(text_without_code.trim(), &code_blocks);
         if !restored_content.trim().is_empty() {
-            chunks.push(create_level_0_chunk(title_owned.as_deref(), restored_content));
+            chunks.push(create_level_0_chunk(
+                title_owned.as_deref(),
+                restored_content,
+            ));
         }
     }
 
