@@ -22,14 +22,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     let title_owned = title.map(std::string::ToString::to_string);
 
     let (text_without_code, code_blocks) = extract_code_blocks(text);
-    let mut headers: Vec<Option<String>> = vec![
-        title_owned.clone(),
-        None,
-        None,
-        None,
-        None,
-        None,
-    ];
+    let mut headers: Vec<Option<String>> = vec![title_owned.clone(), None, None, None, None, None];
 
     let first_header = HEADER_REGEX.find(&text_without_code);
 
