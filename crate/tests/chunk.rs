@@ -327,7 +327,7 @@ fn test_empty_paragraphs() {
 #[test]
 fn test_very_long_paragraph() {
     let long_text = "This is a very long paragraph. ".repeat(100);
-    let text = format!("\n# H1\n\n{}\n", long_text);
+    let text = format!("\n# H1\n\n{long_text}\n");
     let chunks = chunk(
         &text,
         Some(ChunkOptions {

@@ -260,7 +260,7 @@ fn phase2_trailing_accumulator_flushed() {
 fn phase3_chunk_at_max_length_stays() {
     // A chunk whose length >= max_length should NOT be absorbed by phase3
     let long = "word ".repeat(1000); // ~5000 chars
-    let text = format!("# Parent\n\n{}\n\n## Child\n\nChild text.\n", long);
+    let text = format!("# Parent\n\n{long}\n\n## Child\n\nChild text.\n");
     let chunks = chunk(
         &text,
         Some(ChunkOptions {
@@ -277,7 +277,7 @@ fn phase3_chunk_at_max_length_stays() {
 fn phase3_child_too_large_stays_separate() {
     // Large child (> max when added to parent) must NOT be absorbed
     let big_child = "word ".repeat(1000);
-    let text = format!("# Parent\n\nSmall parent.\n\n## Child\n\n{}\n", big_child);
+    let text = format!("# Parent\n\nSmall parent.\n\n## Child\n\n{big_child}\n");
     let chunks = chunk(
         &text,
         Some(ChunkOptions {
