@@ -2,7 +2,7 @@
 name = "breadchunks"
 version = "0.2.1"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.88"
 license = "MIT"
 description = "Heading-aware, token-budgeted semantic chunker for Markdown — for RAG and embedding pipelines."
 repository = "https://github.com/jonathanong/breadchunks"
