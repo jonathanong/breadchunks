@@ -79,7 +79,7 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                     is_child && should_merge(current.length, next.length, min_length, max_length)
                 }) {
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
-                    let child_header = child.header.as_deref().unwrap_or("");
+                    let child_header = child.header.as_deref().unwrap_or_default();
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
                     );
