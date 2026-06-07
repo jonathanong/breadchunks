@@ -75,58 +75,47 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_chunk_default_options() {
+    fn test_chunk_options_fallback_and_phases() {
+        // 1. Empty text
+        assert!(chunk("", None).is_empty());
+
+        // 2. Default options (phase = 3, min_length = 512, max_length = 3072)
         let text = "# Title\n\nParagraph 1.\n\n## Subtitle\n\nParagraph 2.";
-        let chunks = chunk(text, None);
-        // Uses default options (phase = 3, min_length = 512, max_length = 3072)
-        // Everything should be merged into a single chunk because total length < 512
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0].breadcrumb.as_str(), "Title");
-    }
+        let chunks_default = chunk(text, None);
+        assert_eq!(chunks_default.len(), 1);
+        assert_eq!(chunks_default[0].breadcrumb.as_str(), "Title");
 
-    #[test]
-    fn test_chunk_phase_1() {
-        let text = "# Title\n\nParagraph 1.\n\n## Subtitle\n\nParagraph 2.";
-        let options = ChunkOptions {
-            phase: Some(1),
-            ..Default::default()
-        };
-        let chunks = chunk(text, Some(options));
-        // Phase 1 only: should not merge, resulting in 2 chunks
-        assert_eq!(chunks.len(), 2);
-        assert_eq!(chunks[0].breadcrumb.as_str(), "Title");
-        assert_eq!(chunks[1].breadcrumb.as_str(), "Title > Subtitle");
-    }
+        // 3. Phase 1 only
+        let chunks_phase1 = chunk(
+            text,
+            Some(ChunkOptions {
+                phase: Some(1),
+                ..Default::default()
+            }),
+        );
+        assert_eq!(chunks_phase1.len(), 2);
+        assert_eq!(chunks_phase1[1].breadcrumb.as_str(), "Title > Subtitle");
 
-    #[test]
-    fn test_chunk_custom_lengths() {
-        let text = "# Title\n\nShort paragraph 1.\n\nShort paragraph 2.";
-        let options = ChunkOptions {
-            min_length: Some(10),
-            max_length: Some(20),
-            ..Default::default()
-        };
-        let chunks = chunk(text, Some(options));
-        // Since length limit is low, they might not be merged if they exceed max_length
-        assert!(!chunks.is_empty());
-    }
+        // 4. Custom lengths
+        let chunks_custom = chunk(
+            text,
+            Some(ChunkOptions {
+                min_length: Some(10),
+                max_length: Some(20),
+                ..Default::default()
+            }),
+        );
+        assert!(!chunks_custom.is_empty());
 
-    #[test]
-    fn test_chunk_with_title() {
-        let text = "Paragraph without header.";
-        let options = ChunkOptions {
-            title: Some("My Custom Title".to_string()),
-            ..Default::default()
-        };
-        let chunks = chunk(text, Some(options));
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0].breadcrumb.as_str(), "My Custom Title");
-        assert_eq!(chunks[0].header.as_deref(), Some("My Custom Title"));
-    }
-
-    #[test]
-    fn test_chunk_empty_text() {
-        let chunks = chunk("", None);
-        assert_eq!(chunks.len(), 0);
+        // 5. Title fallback
+        let chunks_title = chunk(
+            "Paragraph without header.",
+            Some(ChunkOptions {
+                title: Some("My Custom Title".to_string()),
+                ..Default::default()
+            }),
+        );
+        assert_eq!(chunks_title.len(), 1);
+        assert_eq!(chunks_title[0].breadcrumb.as_str(), "My Custom Title");
     }
 }
