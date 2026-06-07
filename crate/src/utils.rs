@@ -16,10 +16,13 @@ pub fn set_length(chunk: &mut Chunk) {
 
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
 /// Single-pass O(N) where N is the length of `text`.
-pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
+pub fn restore_code_placeholders<'a>(
+    text: &'a str,
+    blocks: &[String],
+) -> std::borrow::Cow<'a, str> {
     const SENTINEL: char = '\u{E000}';
     if blocks.is_empty() || !text.contains(SENTINEL) {
-        return text.to_string();
+        return std::borrow::Cow::Borrowed(text);
     }
     let mut out = String::with_capacity(text.len());
     let mut remaining = text;
@@ -47,7 +50,7 @@ pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
         }
     }
     out.push_str(remaining);
-    out
+    std::borrow::Cow::Owned(out)
 }
 
 /// Check if `parent`'s header path is a prefix of `child`'s header path.
@@ -127,15 +130,16 @@ mod tests {
     #[test]
     fn restore_one() {
         let placeholder = "\u{E000}CODE_BLOCK_0\u{E000}";
-        let r = restore_code_placeholders(&format!("A {placeholder} B"), &["X".to_string()]);
+        let txt = format!("A {placeholder} B");
+        let r = restore_code_placeholders(&txt, &["X".to_string()]);
         assert_eq!(r, "A X B");
     }
     #[test]
     fn restore_many() {
         let p0 = "\u{E000}CODE_BLOCK_0\u{E000}";
         let p1 = "\u{E000}CODE_BLOCK_1\u{E000}";
-        let r =
-            restore_code_placeholders(&format!("{p0} {p1}"), &["A".to_string(), "B".to_string()]);
+        let txt = format!("{p0} {p1}");
+        let r = restore_code_placeholders(&txt, &["A".to_string(), "B".to_string()]);
         assert_eq!(r, "A B");
     }
     #[test]
