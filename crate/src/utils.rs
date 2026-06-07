@@ -16,7 +16,11 @@ pub fn set_length(chunk: &mut Chunk) {
 
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
 /// Single-pass O(N) where N is the length of `text`.
-pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
+pub fn restore_code_placeholders(
+    text: &str,
+    blocks: &[String],
+    consumed_blocks: &mut [bool],
+) -> String {
     const SENTINEL: char = '\u{E000}';
     if blocks.is_empty() || !text.contains(SENTINEL) {
         return text.to_string();
@@ -29,13 +33,19 @@ pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
         if let Some(end) = remaining.find(SENTINEL) {
             let tag = &remaining[..end];
             remaining = &remaining[end + SENTINEL.len_utf8()..];
-            if let Some(block) = tag
+            if let Some(idx) = tag
                 .strip_prefix("CODE_BLOCK_")
                 .and_then(|idx_str| idx_str.parse::<usize>().ok())
-                .and_then(|idx| blocks.get(idx))
             {
-                out.push_str(block);
-                continue;
+                if let Some(block) = blocks.get(idx) {
+                    if let Some(is_consumed) = consumed_blocks.get_mut(idx) {
+                        if !*is_consumed {
+                            *is_consumed = true;
+                            out.push_str(block);
+                            continue;
+                        }
+                    }
+                }
             }
             // Not a valid placeholder — emit the delimiters and tag verbatim.
             out.push(SENTINEL);
@@ -122,32 +132,47 @@ mod tests {
     }
     #[test]
     fn restore_zero() {
-        assert_eq!(restore_code_placeholders("no code", &[]), "no code");
+        assert_eq!(
+            restore_code_placeholders("no code", &[], &mut []),
+            "no code"
+        );
     }
     #[test]
     fn restore_one() {
         let placeholder = "\u{E000}CODE_BLOCK_0\u{E000}";
-        let r = restore_code_placeholders(&format!("A {placeholder} B"), &["X".to_string()]);
+        let mut consumed = [false];
+        let r = restore_code_placeholders(
+            &format!("A {placeholder} B"),
+            &["X".to_string()],
+            &mut consumed,
+        );
         assert_eq!(r, "A X B");
     }
     #[test]
     fn restore_many() {
         let p0 = "\u{E000}CODE_BLOCK_0\u{E000}";
         let p1 = "\u{E000}CODE_BLOCK_1\u{E000}";
-        let r =
-            restore_code_placeholders(&format!("{p0} {p1}"), &["A".to_string(), "B".to_string()]);
+        let mut consumed = [false, false];
+        let r = restore_code_placeholders(
+            &format!("{p0} {p1}"),
+            &["A".to_string(), "B".to_string()],
+            &mut consumed,
+        );
         assert_eq!(r, "A B");
     }
     #[test]
     fn restore_invalid_placeholder_passes_through() {
         // \u{E000}UNKNOWN\u{E000} is not a valid CODE_BLOCK_N — emitted verbatim
-        let r = restore_code_placeholders("\u{E000}UNKNOWN\u{E000}", &["X".to_string()]);
+        let mut consumed = [false];
+        let r =
+            restore_code_placeholders("\u{E000}UNKNOWN\u{E000}", &["X".to_string()], &mut consumed);
         assert_eq!(r, "\u{E000}UNKNOWN\u{E000}");
     }
     #[test]
     fn restore_lone_sentinel_passes_through() {
         // A lone \u{E000} with no closing pair is emitted verbatim
-        let r = restore_code_placeholders("before\u{E000}after", &["X".to_string()]);
+        let mut consumed = [false];
+        let r = restore_code_placeholders("before\u{E000}after", &["X".to_string()], &mut consumed);
         assert_eq!(r, "before\u{E000}after");
     }
     #[test]

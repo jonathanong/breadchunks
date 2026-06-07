@@ -22,6 +22,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     let title_owned = title.map(std::string::ToString::to_string);
 
     let (text_without_code, code_blocks) = extract_code_blocks(text);
+    let mut consumed_blocks = vec![false; code_blocks.len()];
     let mut headers: Vec<Option<String>> = vec![title_owned.clone(), None, None, None, None, None];
 
     let first_header = HEADER_REGEX.find(&text_without_code);
@@ -31,6 +32,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         split_paragraphs(
             preface_content,
             &code_blocks,
+            &mut consumed_blocks,
             0,
             title,
             &headers,
@@ -53,7 +55,8 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         let header_text = header_text.trim_end_matches('\r');
         let level = header_text.bytes().take_while(|&b| b == b'#').count() as u32;
         let header_content_raw = header_text.trim_start_matches('#').trim();
-        let header_content = restore_code_placeholders(header_content_raw, &code_blocks);
+        let header_content =
+            restore_code_placeholders(header_content_raw, &code_blocks, &mut consumed_blocks);
 
         headers[(level - 1) as usize] = Some(header_content.clone());
         headers[level as usize..].fill(None);
@@ -68,6 +71,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         split_paragraphs(
             section_content,
             &code_blocks,
+            &mut consumed_blocks,
             level,
             Some(header_content.as_str()),
             &headers,
@@ -79,6 +83,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         split_paragraphs(
             &text_without_code,
             &code_blocks,
+            &mut consumed_blocks,
             0,
             title,
             &headers,
@@ -118,6 +123,7 @@ fn build_breadcrumb(headers: &[Option<String>]) -> String {
 fn split_paragraphs(
     content: &str,
     code_blocks: &[String],
+    consumed_blocks: &mut [bool],
     level: u32,
     header: Option<&str>,
     headers: &[Option<String>],
@@ -141,7 +147,7 @@ fn split_paragraphs(
 
         for paragraph in paragraphs {
             let mut chunk = prototype.clone();
-            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks);
+            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks, consumed_blocks);
             set_length(&mut chunk);
             chunks.push(chunk);
         }
