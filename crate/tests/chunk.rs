@@ -46,9 +46,15 @@ fn test_breadcrumb_building() {
     let text = "# H1\n\nC1\n\n## H2\n\nC2\n\n### H3\n\nC3";
     let chunks = chunk(text, None);
 
-    let h1_chunk = chunks.iter().find(|c| c.header == Some("H1".to_string().into()));
-    let h2_chunk = chunks.iter().find(|c| c.header == Some("H2".to_string().into()));
-    let h3_chunk = chunks.iter().find(|c| c.header == Some("H3".to_string().into()));
+    let h1_chunk = chunks
+        .iter()
+        .find(|c| c.header == Some("H1".to_string().into()));
+    let h2_chunk = chunks
+        .iter()
+        .find(|c| c.header == Some("H2".to_string().into()));
+    let h3_chunk = chunks
+        .iter()
+        .find(|c| c.header == Some("H3".to_string().into()));
 
     if let Some(c) = h1_chunk {
         assert_eq!(c.breadcrumb.as_str(), "H1");

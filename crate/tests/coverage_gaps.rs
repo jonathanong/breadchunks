@@ -132,7 +132,9 @@ fn superset_parent_some_child_none_returns_false() {
         }),
     );
     // After phase1, B should be a separate chunk, not merged into A
-    assert!(chunks.iter().any(|c| c.header == Some("B".to_string().into())));
+    assert!(chunks
+        .iter()
+        .any(|c| c.header == Some("B".to_string().into())));
 }
 
 // ── merge::should_merge — all four quadrants ──────────────────────────────
