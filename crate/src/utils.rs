@@ -14,6 +14,66 @@ pub fn set_length(chunk: &mut Chunk) {
     chunk.length = if b == 0 || t == 0 { b + t } else { b + 1 + t };
 }
 
+pub fn derive_t(len: usize, b: usize) -> usize {
+    if len <= b {
+        0
+    } else if b == 0 {
+        len
+    } else {
+        len - b - 1
+    }
+}
+
+pub fn merge_text_len(t_a: usize, t_b: usize) -> usize {
+    if t_a == 0 {
+        t_b
+    } else if t_b == 0 {
+        t_a
+    } else {
+        t_a + 1 + t_b
+    }
+}
+
+pub fn update_length_after_merge(
+    current_len: usize,
+    current_breadcrumb_len: usize,
+    chunk_len: usize,
+    chunk_breadcrumb_len: usize,
+) -> usize {
+    let t_current = derive_t(current_len, current_breadcrumb_len);
+    let t_chunk = derive_t(chunk_len, chunk_breadcrumb_len);
+    let t_new = merge_text_len(t_current, t_chunk);
+    if current_breadcrumb_len == 0 || t_new == 0 {
+        current_breadcrumb_len + t_new
+    } else {
+        current_breadcrumb_len + 1 + t_new
+    }
+}
+
+pub fn update_length_after_absorb(
+    current_len: usize,
+    current_breadcrumb_len: usize,
+    child_len: usize,
+    child_breadcrumb_len: usize,
+    header_prefix: &str,
+    child_header: &str,
+) -> usize {
+    let t_current = derive_t(current_len, current_breadcrumb_len);
+    let t_child = derive_t(child_len, child_breadcrumb_len);
+    let mut header_text = String::with_capacity(header_prefix.len() + 1 + child_header.len());
+    header_text.push_str(header_prefix);
+    header_text.push(' ');
+    header_text.push_str(child_header);
+    let t_header = default_length_counter(&header_text);
+    let t_appended = merge_text_len(t_header, t_child);
+    let t_new = merge_text_len(t_current, t_appended);
+    if current_breadcrumb_len == 0 || t_new == 0 {
+        current_breadcrumb_len + t_new
+    } else {
+        current_breadcrumb_len + 1 + t_new
+    }
+}
+
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
 /// Single-pass O(N) where N is the length of `text`.
 pub fn restore_code_placeholders<'a>(
