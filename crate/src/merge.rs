@@ -130,10 +130,8 @@ mod tests {
         length: usize,
     ) -> Chunk {
         let mut h_vec = vec![None; 6];
-        for (i, h) in headers.into_iter().enumerate() {
-            if i < 6 {
-                h_vec[i] = h.map(|s| s.to_string());
-            }
+        for (i, h) in headers.into_iter().take(6).enumerate() {
+            h_vec[i] = h.map(|s| s.to_string());
         }
         Chunk {
             level,
