@@ -247,7 +247,7 @@ mod tests {
             10,
         );
         let chunks = vec![parent, non_child];
-        let merged = merge_phase3(chunks, 0, 100);
+        let merged = merge_phase3(chunks, 100, 100);
 
         assert_eq!(merged.len(), 2);
     }
@@ -302,7 +302,7 @@ mod tests {
         );
         // 80 + 30 = 110 > 100 max_length
         let chunks = vec![parent, child];
-        let merged = merge_phase3(chunks, 0, 100);
+        let merged = merge_phase3(chunks, 100, 100);
 
         assert_eq!(merged.len(), 2);
     }
