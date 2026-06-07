@@ -109,11 +109,22 @@ fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
 }
 
 fn build_breadcrumb(headers: &[Option<String>]) -> String {
-    headers
-        .iter()
-        .filter_map(|h| h.as_deref())
-        .collect::<Vec<_>>()
-        .join(" > ")
+    let mut iter = headers.iter().filter_map(|h| h.as_deref());
+    let Some(first) = iter.next() else {
+        return String::new();
+    };
+
+    // Pre-allocate a reasonable size to avoid most reallocations.
+    // 64 bytes is often enough for a typical breadcrumb.
+    let mut s = String::with_capacity(first.len() + 64);
+    s.push_str(first);
+
+    for h in iter {
+        s.push_str(" > ");
+        s.push_str(h);
+    }
+
+    s
 }
 
 fn split_paragraphs(
