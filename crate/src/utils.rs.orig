@@ -43,8 +43,6 @@ pub fn restore_code_placeholders(
                         *is_consumed = true;
                         out.push_str(block);
                         continue;
-                    } else {
-                        continue;
                     }
                 }
             }
