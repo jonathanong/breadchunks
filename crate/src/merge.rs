@@ -122,6 +122,29 @@ mod tests {
         c
     }
 
+    fn create_test_chunk(
+        level: u32,
+        header: Option<&str>,
+        headers: Vec<Option<&str>>,
+        text: &str,
+        length: usize,
+    ) -> Chunk {
+        let mut h_vec = vec![None; 6];
+        for (i, h) in headers.into_iter().enumerate() {
+            if i < 6 {
+                h_vec[i] = h.map(|s| s.to_string());
+            }
+        }
+        Chunk {
+            level,
+            header: header.map(|s| s.to_string()),
+            headers: Arc::new(h_vec),
+            breadcrumb: Arc::new("".to_string()),
+            text: text.to_string(),
+            length,
+        }
+    }
+
     #[test]
     fn test_merge_phase2_empty() {
         let result = merge_phase2(vec![], 100, 1000);
@@ -180,5 +203,132 @@ mod tests {
     fn test_merge_phase3_empty() {
         let result = merge_phase3(vec![], 100, 1000);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_merge_phase3_absorbs_child() {
+        let parent = create_test_chunk(
+            1,
+            Some("Parent"),
+            vec![Some("Parent")],
+            "Parent content",
+            20,
+        );
+        let child = create_test_chunk(
+            2,
+            Some("Child"),
+            vec![Some("Parent"), Some("Child")],
+            "Child content",
+            10,
+        );
+        let chunks = vec![parent, child];
+        let merged = merge_phase3(chunks, 100, 100);
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].level, 1);
+        assert!(merged[0].text.contains("Parent content"));
+        assert!(merged[0].text.contains("## Child"));
+        assert!(merged[0].text.contains("Child content"));
+    }
+
+    #[test]
+    fn test_merge_phase3_hierarchy_constraint() {
+        let parent = create_test_chunk(
+            1,
+            Some("Parent"),
+            vec![Some("Parent")],
+            "Parent content",
+            20,
+        );
+        // Not a child according to header_is_superset_of
+        let non_child = create_test_chunk(
+            2,
+            Some("Non-Child"),
+            vec![Some("Other"), Some("Non-Child")],
+            "Non-child content",
+            10,
+        );
+        let chunks = vec![parent, non_child];
+        let merged = merge_phase3(chunks, 0, 100);
+
+        assert_eq!(merged.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_phase3_multiple_children() {
+        let parent = create_test_chunk(
+            1,
+            Some("Parent"),
+            vec![Some("Parent")],
+            "Parent content",
+            20,
+        );
+        let child1 = create_test_chunk(
+            2,
+            Some("Child1"),
+            vec![Some("Parent"), Some("Child1")],
+            "Child1 content",
+            10,
+        );
+        let child2 = create_test_chunk(
+            2,
+            Some("Child2"),
+            vec![Some("Parent"), Some("Child2")],
+            "Child2 content",
+            10,
+        );
+
+        let chunks = vec![parent, child1, child2];
+        let merged = merge_phase3(chunks, 100, 100);
+
+        assert_eq!(merged.len(), 1);
+        assert!(merged[0].text.contains("Child1"));
+        assert!(merged[0].text.contains("Child2"));
+    }
+
+    #[test]
+    fn test_merge_phase3_max_length_respected() {
+        let parent = create_test_chunk(
+            1,
+            Some("Parent"),
+            vec![Some("Parent")],
+            "Parent content",
+            80,
+        );
+        let child = create_test_chunk(
+            2,
+            Some("Child"),
+            vec![Some("Parent"), Some("Child")],
+            "Child content",
+            30,
+        );
+        // 80 + 30 = 110 > 100 max_length
+        let chunks = vec![parent, child];
+        let merged = merge_phase3(chunks, 0, 100);
+
+        assert_eq!(merged.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_phase3_min_length_respected() {
+        let parent = create_test_chunk(
+            1,
+            Some("Parent"),
+            vec![Some("Parent")],
+            "Parent content",
+            60,
+        );
+        let child = create_test_chunk(
+            2,
+            Some("Child"),
+            vec![Some("Parent"), Some("Child")],
+            "Child content",
+            60,
+        );
+        // Both are >= 50, so should_merge returns false
+        let chunks = vec![parent, child];
+        let merged = merge_phase3(chunks, 50, 1000);
+
+        assert_eq!(merged.len(), 2);
     }
 }
