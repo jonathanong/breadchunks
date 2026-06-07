@@ -33,7 +33,7 @@
 //!     max_length: Some(2000),
 //!     ..Default::default()
 //! };
-//! let chunks = chunk(markdown, Some(options));
+//! let chunks = chunk(markdown, Some(&options));
 //! assert!(!chunks.is_empty());
 //! ```
 
@@ -49,8 +49,9 @@ pub use types::{Chunk, ChunkOptions};
 /// Chunk markdown text into semantically meaningful pieces.
 ///
 /// Runs up to three phases depending on `options.phase` (default: 3).
-pub fn chunk(text: &str, options: Option<ChunkOptions>) -> Vec<Chunk> {
-    let opts = options.unwrap_or_default();
+pub fn chunk(text: &str, options: Option<&ChunkOptions>) -> Vec<Chunk> {
+    let default_opts = ChunkOptions::default();
+    let opts = options.unwrap_or(&default_opts);
 
     let min_length = opts.min_length.unwrap_or(512) as usize;
     let max_length = opts.max_length.unwrap_or(3072) as usize;

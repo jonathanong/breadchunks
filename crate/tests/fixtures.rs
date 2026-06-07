@@ -51,7 +51,7 @@ fn tech_guide_header_hierarchy() {
     let text = read_fixture("tech-guide.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -71,7 +71,7 @@ fn tech_guide_phase1_more_chunks_than_default() {
     let text = read_fixture("tech-guide.md");
     let phase1 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -85,7 +85,7 @@ fn tech_guide_max_length_respected() {
     let text = read_fixture("tech-guide.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             max_length: Some(300),
             ..Default::default()
         }),
@@ -102,7 +102,7 @@ fn recipe_no_preface() {
     let text = read_fixture("recipe.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -123,14 +123,14 @@ fn recipe_phase2_merges_short_paragraphs() {
     let text = read_fixture("recipe.md");
     let p1 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
     );
     let p2 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             ..Default::default()
         }),
@@ -146,7 +146,7 @@ fn deeply_nested_all_levels_present_in_phase1() {
     let text = read_fixture("deeply-nested.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -163,7 +163,7 @@ fn deeply_nested_phase3_reduces_count() {
     let text = read_fixture("deeply-nested.md");
     let p1 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -177,7 +177,7 @@ fn deeply_nested_h6_absorbed() {
     let text = read_fixture("deeply-nested.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10000),
             max_length: Some(100000),
             ..Default::default()
@@ -241,7 +241,7 @@ fn gettysburg_has_preface_or_background() {
     let text = read_fixture("gettysburg.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -258,7 +258,7 @@ fn gettysburg_with_title_option() {
     // title propagates to preface chunks (level 0); h1+ header chunks overwrite headers[0]
     let phase1 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             title: Some("Lincoln Speeches".to_string()),
             phase: Some(1),
             ..Default::default()
@@ -278,7 +278,7 @@ fn gettysburg_nested_historical_note() {
     let text = read_fixture("gettysburg.md");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
