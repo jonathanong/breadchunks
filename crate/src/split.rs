@@ -133,7 +133,7 @@ fn split_paragraphs(
         let breadcrumb = build_breadcrumb(headers);
         let prototype = Chunk {
             level,
-            header: header.map(std::string::ToString::to_string),
+            header: header.map(|s| std::sync::Arc::new(s.to_string())),
             headers: std::sync::Arc::new(headers.to_vec()),
             breadcrumb: std::sync::Arc::new(breadcrumb),
             text: String::new(),

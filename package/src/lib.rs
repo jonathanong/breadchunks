@@ -44,7 +44,7 @@ fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, String> {
     })?;
     Ok(Chunk {
         level: c.level,
-        header: c.header,
+        header: c.header.map(|h| h.to_string()),
         headers: c.headers.as_ref().clone(),
         breadcrumb: c.breadcrumb.to_string(),
         text: c.text,

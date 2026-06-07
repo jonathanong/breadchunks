@@ -132,7 +132,7 @@ fn superset_parent_some_child_none_returns_false() {
         }),
     );
     // After phase1, B should be a separate chunk, not merged into A
-    assert!(chunks.iter().any(|c| c.header == Some("B".to_string())));
+    assert!(chunks.iter().any(|c| c.header == Some("B".to_string().into())));
 }
 
 // ── merge::should_merge — all four quadrants ──────────────────────────────
@@ -313,13 +313,13 @@ fn split_no_headers_with_title() {
     let chunks = chunk(
         "Hello.",
         Some(ChunkOptions {
-            title: Some("My Doc".to_string()),
+            title: Some("My Doc".to_string().into()),
             ..Default::default()
         }),
     );
     assert_eq!(chunks[0].breadcrumb.as_str(), "My Doc");
-    assert_eq!(chunks[0].header, Some("My Doc".to_string()));
-    assert_eq!(chunks[0].headers[0], Some("My Doc".to_string()));
+    assert_eq!(chunks[0].header, Some("My Doc".to_string().into()));
+    assert_eq!(chunks[0].headers[0], Some("My Doc".to_string().into()));
 }
 
 #[test]
@@ -365,7 +365,7 @@ fn split_header_level_1_clears_h2_through_h6() {
     );
     let h1_chunk = chunks
         .iter()
-        .find(|c| c.header == Some("Back to H1".to_string()))
+        .find(|c| c.header == Some("Back to H1".to_string().into()))
         .unwrap();
     // All slots except h1 (index 0) must be None
     for slot in &h1_chunk.headers[1..] {
@@ -397,13 +397,13 @@ fn split_preface_with_title() {
         text,
         Some(ChunkOptions {
             phase: Some(1),
-            title: Some("Doc".to_string()),
+            title: Some("Doc".to_string().into()),
             ..Default::default()
         }),
     );
     let preface = chunks.iter().find(|c| c.text.contains("Intro.")).unwrap();
     assert_eq!(preface.breadcrumb.as_str(), "Doc");
-    assert_eq!(preface.header, Some("Doc".to_string()));
+    assert_eq!(preface.header, Some("Doc".to_string().into()));
 }
 
 #[test]
@@ -433,8 +433,8 @@ fn split_header_at_document_start() {
     );
     assert_eq!(chunks[0].level, 1);
     assert_eq!(chunks[1].level, 2);
-    assert_eq!(chunks[0].header, Some("H1".to_string()));
-    assert_eq!(chunks[1].header, Some("H2".to_string()));
+    assert_eq!(chunks[0].header, Some("H1".to_string().into()));
+    assert_eq!(chunks[1].header, Some("H2".to_string().into()));
 }
 
 #[test]
@@ -448,8 +448,8 @@ fn split_header_with_crlf_line_endings() {
     );
     assert_eq!(chunks[0].level, 1);
     assert_eq!(chunks[1].level, 2);
-    assert_eq!(chunks[0].header, Some("H1".to_string()));
-    assert_eq!(chunks[1].header, Some("H2".to_string()));
+    assert_eq!(chunks[0].header, Some("H1".to_string().into()));
+    assert_eq!(chunks[1].header, Some("H2".to_string().into()));
     assert!(chunks.iter().all(|c| c.level > 0));
 }
 
@@ -468,10 +468,10 @@ fn split_unclosed_code_block() {
     );
     assert_eq!(chunks.len(), 2);
     assert_eq!(chunks[0].level, 1);
-    assert_eq!(chunks[0].header, Some("H1".to_string()));
+    assert_eq!(chunks[0].header, Some("H1".to_string().into()));
     assert_eq!(chunks[0].text, "```\nUnclosed block");
     assert_eq!(chunks[1].level, 1);
-    assert_eq!(chunks[1].header, Some("H1".to_string()));
+    assert_eq!(chunks[1].header, Some("H1".to_string().into()));
     assert_eq!(chunks[1].text, "Still going");
 }
 
