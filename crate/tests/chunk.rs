@@ -156,7 +156,7 @@ fn test_no_header_with_title() {
     let chunks = chunk(
         text,
         Some(ChunkOptions {
-            title: Some("test title".to_string().into()),
+            title: Some("test title".to_string()),
             ..Default::default()
         }),
     );

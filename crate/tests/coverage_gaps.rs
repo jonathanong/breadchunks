@@ -315,13 +315,13 @@ fn split_no_headers_with_title() {
     let chunks = chunk(
         "Hello.",
         Some(ChunkOptions {
-            title: Some("My Doc".to_string().into()),
+            title: Some("My Doc".to_string()),
             ..Default::default()
         }),
     );
     assert_eq!(chunks[0].breadcrumb.as_str(), "My Doc");
     assert_eq!(chunks[0].header, Some("My Doc".to_string().into()));
-    assert_eq!(chunks[0].headers[0], Some("My Doc".to_string().into()));
+    assert_eq!(chunks[0].headers[0], Some("My Doc".to_string()));
 }
 
 #[test]
@@ -399,7 +399,7 @@ fn split_preface_with_title() {
         text,
         Some(ChunkOptions {
             phase: Some(1),
-            title: Some("Doc".to_string().into()),
+            title: Some("Doc".to_string()),
             ..Default::default()
         }),
     );
