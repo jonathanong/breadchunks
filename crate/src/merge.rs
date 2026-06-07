@@ -106,8 +106,8 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
+    use std::sync::Arc;
 
     fn chunk(breadcrumb: &str, text: &str) -> Chunk {
         let mut c = Chunk {
