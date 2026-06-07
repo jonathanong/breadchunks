@@ -108,7 +108,7 @@ mod tests {
         };
         let chunks = chunk(text, Some(options));
         // Since length limit is low, they might not be merged if they exceed max_length
-        assert!(chunks.len() >= 1);
+        assert!(!chunks.is_empty());
     }
 
     #[test]
