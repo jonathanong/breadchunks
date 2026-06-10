@@ -6,7 +6,7 @@ pub struct Chunk {
     /// Heading depth: 0 = preface (before first header), 1–6 = H1–H6.
     pub level: u32,
     /// Text of the nearest enclosing heading (not including the `#` markers).
-    pub header: Option<String>,
+    pub header: Option<Arc<String>>,
     /// Six-slot heading stack (indices 0–5 = H1–H6). Each slot is `Some` if
     /// that heading level is currently active, `None` otherwise.
     pub headers: Arc<Vec<Option<String>>>,
