@@ -148,3 +148,107 @@ fn split_paragraphs(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_split_by_headers_empty_text() {
+        let chunks = split_by_headers("", None);
+        assert!(chunks.is_empty());
+    }
+
+    #[test]
+    fn test_split_by_headers_no_headers() {
+        let text = "This is a simple paragraph.\n\nAnd another one.";
+        let chunks = split_by_headers(text, None);
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].level, 0);
+        assert_eq!(chunks[0].header, None);
+        assert_eq!(chunks[0].breadcrumb.as_str(), "");
+        assert_eq!(chunks[0].text, "This is a simple paragraph.");
+        assert_eq!(chunks[1].level, 0);
+        assert_eq!(chunks[1].header, None);
+        assert_eq!(chunks[1].breadcrumb.as_str(), "");
+        assert_eq!(chunks[1].text, "And another one.");
+    }
+
+    #[test]
+    fn test_split_by_headers_with_title() {
+        let text = "This is a simple paragraph.";
+        let chunks = split_by_headers(text, Some("My Title"));
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0].level, 0);
+        assert_eq!(chunks[0].header, Some("My Title".to_string()));
+        assert_eq!(chunks[0].breadcrumb.as_str(), "My Title");
+        assert_eq!(chunks[0].text, "This is a simple paragraph.");
+    }
+
+    #[test]
+    fn test_split_by_headers_basic() {
+        let text = "# Main Header\n\nSome content.";
+        let chunks = split_by_headers(text, None);
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0].level, 1);
+        assert_eq!(chunks[0].header, Some("Main Header".to_string()));
+        assert_eq!(chunks[0].breadcrumb.as_str(), "Main Header");
+        assert_eq!(chunks[0].text, "Some content.");
+    }
+
+    #[test]
+    fn test_split_by_headers_multiple_headers() {
+        let text = "# H1\n\nContent 1\n\n## H2\n\nContent 2\n\n### H3\n\nContent 3";
+        let chunks = split_by_headers(text, None);
+        assert_eq!(chunks.len(), 3);
+
+        assert_eq!(chunks[0].level, 1);
+        assert_eq!(chunks[0].header, Some("H1".to_string()));
+        assert_eq!(chunks[0].breadcrumb.as_str(), "H1");
+        assert_eq!(chunks[0].text, "Content 1");
+
+        assert_eq!(chunks[1].level, 2);
+        assert_eq!(chunks[1].header, Some("H2".to_string()));
+        assert_eq!(chunks[1].breadcrumb.as_str(), "H1 > H2");
+        assert_eq!(chunks[1].text, "Content 2");
+
+        assert_eq!(chunks[2].level, 3);
+        assert_eq!(chunks[2].header, Some("H3".to_string()));
+        assert_eq!(chunks[2].breadcrumb.as_str(), "H1 > H2 > H3");
+        assert_eq!(chunks[2].text, "Content 3");
+    }
+
+    #[test]
+    fn test_split_by_headers_preface() {
+        let text = "Intro text.\n\n# H1\n\nContent 1";
+        let chunks = split_by_headers(text, None);
+        assert_eq!(chunks.len(), 2);
+
+        assert_eq!(chunks[0].level, 0);
+        assert_eq!(chunks[0].header, None);
+        assert_eq!(chunks[0].breadcrumb.as_str(), "");
+        assert_eq!(chunks[0].text, "Intro text.");
+
+        assert_eq!(chunks[1].level, 1);
+        assert_eq!(chunks[1].header, Some("H1".to_string()));
+        assert_eq!(chunks[1].breadcrumb.as_str(), "H1");
+        assert_eq!(chunks[1].text, "Content 1");
+    }
+
+    #[test]
+    fn test_split_by_headers_code_blocks() {
+        let text = "# H1\n\n```\n# Fake Header\n```\n\nMore content.";
+        let chunks = split_by_headers(text, None);
+        assert_eq!(chunks.len(), 2);
+
+        assert_eq!(chunks[0].level, 1);
+        assert_eq!(chunks[0].header, Some("H1".to_string()));
+        assert_eq!(chunks[0].breadcrumb.as_str(), "H1");
+        assert_eq!(chunks[0].text, "```\n# Fake Header\n```");
+
+        assert_eq!(chunks[1].level, 1);
+        assert_eq!(chunks[1].header, Some("H1".to_string()));
+        assert_eq!(chunks[1].breadcrumb.as_str(), "H1");
+        assert_eq!(chunks[1].text, "More content.");
+    }
+}
