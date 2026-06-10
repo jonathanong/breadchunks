@@ -59,7 +59,7 @@ fn run_batch(
     inputs
         .iter()
         .map(|text| {
-            breadchunks::chunk(text, options.clone())
+            breadchunks::chunk(text, options.as_ref())
                 .into_iter()
                 .map(map_chunk)
                 .collect::<std::result::Result<Vec<Chunk>, String>>()

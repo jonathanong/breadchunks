@@ -36,7 +36,7 @@ Paragraph 3 under H3.
                 phase: Some(1),
                 ..Default::default()
             };
-            breadchunks::chunk(black_box(&markdown), black_box(Some(options)))
+            breadchunks::chunk(black_box(&markdown), black_box(Some(&options)))
         })
     });
 }
