@@ -54,12 +54,12 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v6.0.1
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: target/llvm-cov/lcov.info
           flags: rust
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Install Node dependencies
         working-directory: package

@@ -31,7 +31,7 @@ fn test_multiple_headers() {
         phase: Some(1),
         ..Default::default()
     };
-    let chunks = chunk(text, Some(options));
+    let chunks = chunk(text, Some(&options));
     assert!(chunks.len() >= 2);
     assert!(chunks
         .iter()
@@ -77,7 +77,7 @@ fn test_phase_1_only() {
         phase: Some(1),
         ..Default::default()
     };
-    let chunks = chunk(text, Some(options));
+    let chunks = chunk(text, Some(&options));
     assert!(chunks.len() >= 2);
 }
 
@@ -90,10 +90,10 @@ fn test_phase_2_merge_same_breadcrumb() {
         max_length: Some(1000),
         ..Default::default()
     };
-    let chunks = chunk(text, Some(options));
+    let chunks = chunk(text, Some(&options));
     let phase1_chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -108,7 +108,7 @@ fn test_title_option() {
         title: Some("My Title".to_string()),
         ..Default::default()
     };
-    let chunks = chunk(text, Some(options));
+    let chunks = chunk(text, Some(&options));
     assert_eq!(chunks[0].headers[0], Some("My Title".to_string()));
 }
 
@@ -120,7 +120,7 @@ fn test_min_max_length() {
         max_length: Some(10),
         ..Default::default()
     };
-    let chunks = chunk(text, Some(options));
+    let chunks = chunk(text, Some(&options));
     for c in &chunks {
         assert!(c.length <= 10);
     }
@@ -149,7 +149,7 @@ fn test_no_header_with_title() {
     let text = "\nthis is a test article without a header\n\nthis is a test article without a header\n\nthis is a test article without a header\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             title: Some("test title".to_string()),
             ..Default::default()
         }),
@@ -182,7 +182,7 @@ fn test_custom_min_max() {
     let text = "\n# H1\n\nShort paragraph.\n\n## H2\n\nAnother short paragraph.\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(40),
             max_length: Some(400),
             ..Default::default()
@@ -209,7 +209,7 @@ fn test_code_blocks_no_fake_headers() {
     let text = "\n# Code Block Test\n\nParagraph before code.\n\n```\n# not a heading\nconst value = 42\n```\n\nParagraph after code.\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10),
             max_length: Some(500),
             ..Default::default()
@@ -246,7 +246,7 @@ fn test_phase1_returns_early() {
     let text = "\n# H1\n\nParagraph 1\n\n## H2\n\nParagraph 2\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -260,7 +260,7 @@ fn test_phase2_after_first_merge() {
     let text = "\n# H1\n\nParagraph 1\n\n## H2\n\nParagraph 2\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             ..Default::default()
         }),
@@ -274,7 +274,7 @@ fn test_paragraphs_merge_under_min_length() {
     let text = "\n# Merge Example\n\nShort one.\n\nShort two.\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(1000),
             max_length: Some(10000),
             ..Default::default()
@@ -289,7 +289,7 @@ fn test_parent_absorbs_child() {
     let text = "\n# Parent Header\n\nParent paragraph.\n\n## Child Header\n\nChild paragraph.\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(1000),
             max_length: Some(10000),
             ..Default::default()
@@ -305,7 +305,7 @@ fn test_h6_merges_into_parent() {
     let text = "\n# Root\n\nRoot paragraph.\n\n###### Deep Child\n\nDeep child paragraph.\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(1000),
             max_length: Some(10000),
             ..Default::default()
@@ -330,7 +330,7 @@ fn test_very_long_paragraph() {
     let text = format!("\n# H1\n\n{long_text}\n");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             max_length: Some(200),
             ..Default::default()
         }),
@@ -406,14 +406,14 @@ fn test_merging_respects_token_limits() {
 
     let chunks_small = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             max_length: Some(150),
             ..Default::default()
         }),
     );
     let chunks_large = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             max_length: Some(2000),
             ..Default::default()
         }),
@@ -429,7 +429,7 @@ fn test_hierarchical_merging_preserves_structure() {
     let text = "\n# H1\n\nContent 1\n\n## H2\n\nContent 2\n\n### H3\n\nContent 3\n";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(40),
             max_length: Some(4000),
             ..Default::default()

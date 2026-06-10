@@ -87,7 +87,7 @@ fn superset_different_length_returns_false() {
     let text = "# Root\n\nRoot text.\n\n## Sibling A\n\nSib A text.\n\n## Sibling B\n\nSib B text.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10000),
             max_length: Some(100000),
             ..Default::default()
@@ -109,7 +109,7 @@ fn superset_parent_none_returns_true() {
     let text = "# Root\n\nRoot.\n\n## Child\n\nChild.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10000),
             max_length: Some(100000),
             ..Default::default()
@@ -126,7 +126,7 @@ fn superset_parent_some_child_none_returns_false() {
     let text = "# Root\n\nR.\n\n## A\n\nA text.\n\n### Sub\n\nSub text.\n\n## B\n\nB text.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -147,14 +147,14 @@ fn should_merge_both_big_no_merge() {
     );
     let p1 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
     );
     let p2 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             min_length: Some(400),
             max_length: Some(2000),
@@ -171,14 +171,14 @@ fn should_merge_one_small_within_max_merges() {
     let text = "# H\n\nShort.\n\n# H\n\nAlso short.";
     let p1 = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
     );
     let p2 = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             min_length: Some(1000),
             max_length: Some(10000),
@@ -197,7 +197,7 @@ fn should_merge_sum_exceeds_max_no_merge() {
     );
     let p2 = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             min_length: Some(1000),
             max_length: Some(100), // tiny max
@@ -216,7 +216,7 @@ fn phase2_empty_input() {
     // BUT chunk("   ") returns 0 chunks, so phase2 gets an empty vec
     let chunks = chunk(
         "   \n\n   ",
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             ..Default::default()
         }),
@@ -229,14 +229,14 @@ fn phase2_different_breadcrumb_not_merged() {
     let text = "# A\n\nText A.\n\n## B\n\nText B.";
     let p1 = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
     );
     let p2 = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(2),
             min_length: Some(10000),
             max_length: Some(100000),
@@ -263,7 +263,7 @@ fn phase3_chunk_at_max_length_stays() {
     let text = format!("# Parent\n\n{long}\n\n## Child\n\nChild text.\n");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10000),
             max_length: Some(100), // parent chunk is far above this
             ..Default::default()
@@ -280,7 +280,7 @@ fn phase3_child_too_large_stays_separate() {
     let text = format!("# Parent\n\nSmall parent.\n\n## Child\n\n{big_child}\n");
     let chunks = chunk(
         &text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             min_length: Some(10000),
             max_length: Some(200),
             ..Default::default()
@@ -312,7 +312,7 @@ fn split_no_headers_with_title() {
     // title propagates to header/breadcrumb in no-headers fallback
     let chunks = chunk(
         "Hello.",
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             title: Some("My Doc".to_string()),
             ..Default::default()
         }),
@@ -328,7 +328,7 @@ fn split_preface_whitespace_paragraphs_filtered() {
     let text = "\n\n\n\n# H1\n\nContent.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -343,7 +343,7 @@ fn split_header_level_6_clears_nothing_below() {
     let text = "###### H6\n\nDeep content.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -358,7 +358,7 @@ fn split_header_level_1_clears_h2_through_h6() {
     let text = "## H2\n\nA.\n\n### H3\n\nB.\n\n# Back to H1\n\nC.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -379,7 +379,7 @@ fn split_last_header_content_end_is_text_len() {
     let text = "# Only Header\n\nThe only paragraph.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -395,7 +395,7 @@ fn split_preface_with_title() {
     let text = "Intro.\n\n# H1\n\nBody.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             title: Some("Doc".to_string()),
             ..Default::default()
@@ -412,7 +412,7 @@ fn split_preface_without_title() {
     let text = "Intro.\n\n# H1\n\nBody.";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -426,7 +426,7 @@ fn split_preface_without_title() {
 fn split_header_at_document_start() {
     let chunks = chunk(
         "# H1\n\nFirst paragraph.\n\n## H2\n\nSecond paragraph.",
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -441,7 +441,7 @@ fn split_header_at_document_start() {
 fn split_header_with_crlf_line_endings() {
     let chunks = chunk(
         "# H1\r\n\r\nParagraph one.\r\n\r\n## H2\r\n\r\nParagraph two.",
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),
@@ -461,7 +461,7 @@ fn split_unclosed_code_block() {
     let text = "# H1\n\n```\nUnclosed block\n\nStill going";
     let chunks = chunk(
         text,
-        Some(ChunkOptions {
+        Some(&ChunkOptions {
             phase: Some(1),
             ..Default::default()
         }),

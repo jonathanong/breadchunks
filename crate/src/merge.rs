@@ -79,7 +79,7 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                     is_child && should_merge(current.length, next.length, min_length, max_length)
                 }) {
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
-                    let child_header = child.header.as_deref().unwrap_or("");
+                    let child_header = child.header.as_deref().unwrap_or_default();
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
                     );
@@ -107,6 +107,74 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+
+    fn chunk(breadcrumb: &str, text: &str) -> Chunk {
+        let mut c = Chunk {
+            level: 1,
+            header: None,
+            headers: Arc::new(vec![None; 6]),
+            breadcrumb: Arc::new(breadcrumb.to_string()),
+            text: text.to_string(),
+            length: 0,
+        };
+        set_length(&mut c);
+        c
+    }
+
+    #[test]
+    fn test_merge_phase2_empty() {
+        let result = merge_phase2(vec![], 100, 1000);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_merge_phase2_no_merge_different_breadcrumb() {
+        let c1 = chunk("A", "text 1");
+        let c2 = chunk("B", "text 2");
+        let result = merge_phase2(vec![c1, c2], 100, 1000);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_phase2_merge_same_breadcrumb() {
+        let c1 = chunk("A", "text 1"); // small
+        let c2 = chunk("A", "text 2"); // small
+        let result = merge_phase2(vec![c1, c2], 100, 1000);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].text, "text 1\n\ntext 2");
+        assert_eq!(result[0].breadcrumb.as_str(), "A");
+    }
+
+    #[test]
+    fn test_merge_phase2_no_merge_both_large() {
+        // Both >= 10, min_length is 10
+        let c1 = chunk("A", "0123456789");
+        let c2 = chunk("A", "0123456789");
+        let result = merge_phase2(vec![c1.clone(), c2.clone()], 10, 1000);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_phase2_no_merge_too_big() {
+        let c1 = chunk("A", "01234");
+        let c2 = chunk("A", "01234");
+        // Combine length > max_length (e.g. 5)
+        let result = merge_phase2(vec![c1.clone(), c2.clone()], 10, 5);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_phase2_multiple_merge() {
+        let c1 = chunk("A", "1");
+        let c2 = chunk("A", "2");
+        let c3 = chunk("A", "3");
+        let c4 = chunk("B", "4"); // different breadcrumb
+        let result = merge_phase2(vec![c1, c2, c3, c4], 100, 1000);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].text, "1\n\n2\n\n3");
+        assert_eq!(result[1].text, "4");
+    }
 
     #[test]
     fn test_merge_phase3_empty() {

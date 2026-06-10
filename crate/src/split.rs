@@ -53,7 +53,8 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
         let header_text = header_text.trim_end_matches('\r');
         let level = header_text.bytes().take_while(|&b| b == b'#').count() as u32;
         let header_content_raw = header_text.trim_start_matches('#').trim();
-        let header_content = restore_code_placeholders(header_content_raw, &code_blocks);
+        let header_content =
+            restore_code_placeholders(header_content_raw, &code_blocks).into_owned();
 
         headers[(level - 1) as usize] = Some(header_content.clone());
         headers[level as usize..].fill(None);
@@ -141,7 +142,7 @@ fn split_paragraphs(
 
         for paragraph in paragraphs {
             let mut chunk = prototype.clone();
-            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks);
+            chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks).into_owned();
             set_length(&mut chunk);
             chunks.push(chunk);
         }
