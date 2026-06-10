@@ -126,10 +126,9 @@ fn split_paragraphs(
 ) {
     let mut paragraphs = PARAGRAPH_SPLIT_REGEX
         .split(content)
-        .filter(|p| !p.trim().is_empty())
-        .peekable();
+        .filter(|p| !p.trim().is_empty());
 
-    if paragraphs.peek().is_some() {
+    if let Some(first) = paragraphs.next() {
         let breadcrumb = build_breadcrumb(headers);
         let prototype = Chunk {
             level,
@@ -140,7 +139,7 @@ fn split_paragraphs(
             length: 0,
         };
 
-        for paragraph in paragraphs {
+        for paragraph in std::iter::once(first).chain(paragraphs) {
             let mut chunk = prototype.clone();
             chunk.text = restore_code_placeholders(paragraph.trim(), code_blocks).into_owned();
             set_length(&mut chunk);
