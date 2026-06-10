@@ -11,7 +11,7 @@ pub fn bench_restore(c: &mut Criterion) {
                 phase: Some(1),
                 ..Default::default()
             };
-            breadchunks::chunk(black_box(&markdown), black_box(Some(options)))
+            breadchunks::chunk(black_box(&markdown), black_box(Some(&options)))
         })
     });
 }
