@@ -46,8 +46,8 @@ jobs:
 
       - name: Run Rust tests with coverage
         run: |
-          mkdir -p target/llvm-cov
-          cargo llvm-cov --package breadchunks --show-missing-lines --fail-under-lines 99 --lcov --output-path target/llvm-cov/lcov.info
+          mkdir -p target/llvm-cov && cd crate
+          cargo llvm-cov --package breadchunks --show-missing-lines --fail-under-lines 99 --lcov --output-path ../target/llvm-cov/lcov.info
 
       - name: Run breadchunks-node tests
         run: cargo test --package breadchunks-node

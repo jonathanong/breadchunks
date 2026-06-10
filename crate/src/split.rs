@@ -109,11 +109,22 @@ fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
 }
 
 fn build_breadcrumb(headers: &[Option<String>]) -> String {
-    headers
-        .iter()
-        .filter_map(|h| h.as_deref())
-        .collect::<Vec<_>>()
-        .join(" > ")
+    let mut iter = headers.iter().filter_map(|h| h.as_deref());
+    let Some(first) = iter.next() else {
+        return String::new();
+    };
+
+    // Pre-allocate a reasonable size to avoid most reallocations.
+    // 64 bytes is often enough for a typical breadcrumb.
+    let mut s = String::with_capacity(first.len() + 64);
+    s.push_str(first);
+
+    for h in iter {
+        s.push_str(" > ");
+        s.push_str(h);
+    }
+
+    s
 }
 
 fn split_paragraphs(
@@ -151,6 +162,7 @@ fn split_paragraphs(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
     #[test]
     fn test_split_by_headers_empty_text() {
@@ -179,7 +191,7 @@ mod tests {
         let chunks = split_by_headers(text, Some("My Title"));
         assert_eq!(chunks.len(), 1);
         assert_eq!(chunks[0].level, 0);
-        assert_eq!(chunks[0].header, Some("My Title".to_string()));
+        assert_eq!(chunks[0].header, Some(Arc::new("My Title".to_string())));
         assert_eq!(chunks[0].breadcrumb.as_str(), "My Title");
         assert_eq!(chunks[0].text, "This is a simple paragraph.");
     }
@@ -190,7 +202,7 @@ mod tests {
         let chunks = split_by_headers(text, None);
         assert_eq!(chunks.len(), 1);
         assert_eq!(chunks[0].level, 1);
-        assert_eq!(chunks[0].header, Some("Main Header".to_string()));
+        assert_eq!(chunks[0].header, Some(Arc::new("Main Header".to_string())));
         assert_eq!(chunks[0].breadcrumb.as_str(), "Main Header");
         assert_eq!(chunks[0].text, "Some content.");
     }
@@ -202,17 +214,17 @@ mod tests {
         assert_eq!(chunks.len(), 3);
 
         assert_eq!(chunks[0].level, 1);
-        assert_eq!(chunks[0].header, Some("H1".to_string()));
+        assert_eq!(chunks[0].header, Some(Arc::new("H1".to_string())));
         assert_eq!(chunks[0].breadcrumb.as_str(), "H1");
         assert_eq!(chunks[0].text, "Content 1");
 
         assert_eq!(chunks[1].level, 2);
-        assert_eq!(chunks[1].header, Some("H2".to_string()));
+        assert_eq!(chunks[1].header, Some(Arc::new("H2".to_string())));
         assert_eq!(chunks[1].breadcrumb.as_str(), "H1 > H2");
         assert_eq!(chunks[1].text, "Content 2");
 
         assert_eq!(chunks[2].level, 3);
-        assert_eq!(chunks[2].header, Some("H3".to_string()));
+        assert_eq!(chunks[2].header, Some(Arc::new("H3".to_string())));
         assert_eq!(chunks[2].breadcrumb.as_str(), "H1 > H2 > H3");
         assert_eq!(chunks[2].text, "Content 3");
     }
@@ -229,7 +241,7 @@ mod tests {
         assert_eq!(chunks[0].text, "Intro text.");
 
         assert_eq!(chunks[1].level, 1);
-        assert_eq!(chunks[1].header, Some("H1".to_string()));
+        assert_eq!(chunks[1].header, Some(Arc::new("H1".to_string())));
         assert_eq!(chunks[1].breadcrumb.as_str(), "H1");
         assert_eq!(chunks[1].text, "Content 1");
     }
@@ -241,12 +253,12 @@ mod tests {
         assert_eq!(chunks.len(), 2);
 
         assert_eq!(chunks[0].level, 1);
-        assert_eq!(chunks[0].header, Some("H1".to_string()));
+        assert_eq!(chunks[0].header, Some(Arc::new("H1".to_string())));
         assert_eq!(chunks[0].breadcrumb.as_str(), "H1");
         assert_eq!(chunks[0].text, "```\n# Fake Header\n```");
 
         assert_eq!(chunks[1].level, 1);
-        assert_eq!(chunks[1].header, Some("H1".to_string()));
+        assert_eq!(chunks[1].header, Some(Arc::new("H1".to_string())));
         assert_eq!(chunks[1].breadcrumb.as_str(), "H1");
         assert_eq!(chunks[1].text, "More content.");
     }
