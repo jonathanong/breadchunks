@@ -139,7 +139,7 @@ mod tests {
         }
         Chunk {
             level,
-            header: header.map(|s| s.to_string()),
+            header: header.map(|s| Arc::new(s.to_string())),
             headers: Arc::new(h_vec),
             breadcrumb: Arc::new("".to_string()),
             text: text.to_string(),
