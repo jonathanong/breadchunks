@@ -38,10 +38,9 @@ fn map_options(options: Option<ChunkOptions>) -> Option<breadchunks::ChunkOption
     })
 }
 
-fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, String> {
-    let length = u32::try_from(c.length).map_err(|_| {
-        "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding".to_string()
-    })?;
+fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, &'static str> {
+    let length = u32::try_from(c.length)
+        .map_err(|_| "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding")?;
     Ok(Chunk {
         level: c.level,
         header: c.header.map(|h| h.to_string()),
@@ -55,14 +54,14 @@ fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, String> {
 fn run_batch(
     inputs: &[String],
     options: &Option<breadchunks::ChunkOptions>,
-) -> std::result::Result<Vec<Vec<Chunk>>, String> {
+) -> std::result::Result<Vec<Vec<Chunk>>, &'static str> {
     inputs
         .iter()
         .map(|text| {
             breadchunks::chunk(text, options.as_ref())
                 .into_iter()
                 .map(map_chunk)
-                .collect::<std::result::Result<Vec<Chunk>, String>>()
+                .collect::<std::result::Result<Vec<Chunk>, &'static str>>()
         })
         .collect()
 }
