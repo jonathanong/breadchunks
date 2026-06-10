@@ -22,3 +22,23 @@ pub fn default_length_counter(text: &str) -> usize {
     }
     count
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_length_counter() {
+        assert_eq!(default_length_counter("hello world"), 11);
+        assert_eq!(default_length_counter(" hello world "), 11);
+        assert_eq!(default_length_counter("hello   world"), 11);
+        assert_eq!(default_length_counter(""), 0);
+        assert_eq!(default_length_counter("   "), 0);
+        assert_eq!(default_length_counter(" a "), 1);
+        assert_eq!(default_length_counter("a"), 1);
+        assert_eq!(default_length_counter(" a b "), 3);
+        assert_eq!(default_length_counter(" a\nb "), 3);
+        assert_eq!(default_length_counter("\n\t \r"), 0);
+        assert_eq!(default_length_counter("hello\tworld\n"), 11);
+    }
+}
