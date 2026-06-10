@@ -23,3 +23,7 @@ harness = false
 
 [dev-dependencies]
 criterion = "0.8.2"
+
+[[bench]]
+name = "restore_bench"
+harness = false
