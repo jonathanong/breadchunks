@@ -89,7 +89,7 @@ mod tests {
         // 3. Phase 1 only
         let chunks_phase1 = chunk(
             text,
-            Some(ChunkOptions {
+            Some(&ChunkOptions {
                 phase: Some(1),
                 ..Default::default()
             }),
@@ -100,7 +100,7 @@ mod tests {
         // 4. Custom lengths
         let chunks_custom = chunk(
             text,
-            Some(ChunkOptions {
+            Some(&ChunkOptions {
                 min_length: Some(10),
                 max_length: Some(20),
                 ..Default::default()
@@ -111,7 +111,7 @@ mod tests {
         // 5. Title fallback
         let chunks_title = chunk(
             "Paragraph without header.",
-            Some(ChunkOptions {
+            Some(&ChunkOptions {
                 title: Some("My Custom Title".to_string()),
                 ..Default::default()
             }),
