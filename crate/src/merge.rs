@@ -1,7 +1,8 @@
 use std::fmt::Write as _;
 
+use super::tokens::default_length_counter;
 use super::types::Chunk;
-use super::utils::{header_is_superset_of, set_length};
+use super::utils::{header_is_superset_of, update_length_after_absorb, update_length_after_merge};
 
 const HASHES: &str = "######";
 
@@ -30,10 +31,16 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                 if prev.breadcrumb == chunk.breadcrumb
                     && should_merge(prev.length, chunk.length, min_length, max_length)
                 {
+                    let breadcrumb_len = default_length_counter(prev.breadcrumb.as_str());
+                    prev.length = update_length_after_merge(
+                        prev.length,
+                        breadcrumb_len,
+                        chunk.length,
+                        breadcrumb_len,
+                    );
                     prev.text.reserve(chunk.text.len() + 2);
                     prev.text.push_str("\n\n");
                     prev.text.push_str(&chunk.text);
-                    set_length(&mut prev);
                     current = Some(prev);
                     continue;
                 }
@@ -72,6 +79,7 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
 
         while let Some(mut current) = iter.next() {
             if current.level == level && current.length < max_length {
+                let current_breadcrumb_len = default_length_counter(current.breadcrumb.as_str());
                 while let Some(child) = iter.next_if(|next| {
                     let is_child = next.level > level
                         && header_is_superset_of(&current.headers, &next.headers);
@@ -80,6 +88,17 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                 }) {
                     let header_prefix = &HASHES[..child.level.min(6) as usize];
                     let child_header = child.header.as_deref().unwrap_or("");
+                    let child_breadcrumb_len = default_length_counter(child.breadcrumb.as_str());
+
+                    current.length = update_length_after_absorb(
+                        current.length,
+                        current_breadcrumb_len,
+                        child.length,
+                        child_breadcrumb_len,
+                        header_prefix,
+                        child_header,
+                    );
+
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
                     );
@@ -89,7 +108,6 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                         header_prefix, child_header, child.text
                     )
                     .expect("BUG: failed to write merged child section");
-                    set_length(&mut current);
                 }
 
                 merged.push(current);

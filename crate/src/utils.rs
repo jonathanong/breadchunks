@@ -14,6 +14,66 @@ pub fn set_length(chunk: &mut Chunk) {
     chunk.length = if b == 0 || t == 0 { b + t } else { b + 1 + t };
 }
 
+pub fn derive_t(len: usize, b: usize) -> usize {
+    if len <= b {
+        0
+    } else if b == 0 {
+        len
+    } else {
+        len - b - 1
+    }
+}
+
+pub fn merge_text_len(t_a: usize, t_b: usize) -> usize {
+    if t_a == 0 {
+        t_b
+    } else if t_b == 0 {
+        t_a
+    } else {
+        t_a + 2 + t_b
+    }
+}
+
+pub fn update_length_after_merge(
+    current_len: usize,
+    current_breadcrumb_len: usize,
+    chunk_len: usize,
+    chunk_breadcrumb_len: usize,
+) -> usize {
+    let t_current = derive_t(current_len, current_breadcrumb_len);
+    let t_chunk = derive_t(chunk_len, chunk_breadcrumb_len);
+    let t_new = merge_text_len(t_current, t_chunk);
+    if current_breadcrumb_len == 0 || t_new == 0 {
+        current_breadcrumb_len + t_new
+    } else {
+        current_breadcrumb_len + 1 + t_new
+    }
+}
+
+pub fn update_length_after_absorb(
+    current_len: usize,
+    current_breadcrumb_len: usize,
+    child_len: usize,
+    child_breadcrumb_len: usize,
+    header_prefix: &str,
+    child_header: &str,
+) -> usize {
+    let t_current = derive_t(current_len, current_breadcrumb_len);
+    let t_child = derive_t(child_len, child_breadcrumb_len);
+    let mut header_text = String::with_capacity(header_prefix.len() + 1 + child_header.len());
+    header_text.push_str(header_prefix);
+    header_text.push(' ');
+    header_text.push_str(child_header);
+    let t_header = default_length_counter(&header_text);
+    let t_appended = merge_text_len(t_header, t_child);
+    let t_new = merge_text_len(t_current, t_appended);
+    if current_breadcrumb_len == 0 || t_new == 0 {
+        current_breadcrumb_len + t_new
+    } else {
+        current_breadcrumb_len + 1 + t_new
+    }
+}
+
 /// Replace `\u{E000}CODE_BLOCK_N\u{E000}` placeholders back with the original code content.
 /// Single-pass O(N) where N is the length of `text`.
 pub fn restore_code_placeholders(text: &str, blocks: &[String]) -> String {
@@ -170,5 +230,41 @@ mod tests {
     fn super_full_match() {
         let full: Vec<Option<String>> = (1..=6).map(|i| s(&i.to_string())).collect();
         assert!(header_is_superset_of(&full, &full));
+    }
+}
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::{derive_t, merge_text_len, update_length_after_absorb, update_length_after_merge};
+
+    #[test]
+    fn test_utils_edge_cases() {
+        // derive_t edge cases
+        assert_eq!(derive_t(5, 5), 0); // len <= b
+        assert_eq!(derive_t(5, 0), 5); // b == 0
+        assert_eq!(derive_t(10, 5), 4); // len - b - 1
+
+        // merge_text_len edge cases
+        assert_eq!(merge_text_len(0, 5), 5); // t_a == 0
+        assert_eq!(merge_text_len(5, 0), 5); // t_b == 0
+        assert_eq!(merge_text_len(5, 5), 12); // t_a + 2 + t_b
+
+        // update_length_after_merge edge cases
+        // current_breadcrumb_len == 0
+        assert_eq!(update_length_after_merge(5, 0, 5, 0), 12);
+        // t_new == 0
+        assert_eq!(update_length_after_merge(5, 5, 5, 5), 5);
+
+        // update_length_after_absorb edge cases
+        // current_breadcrumb_len == 0
+        assert_eq!(update_length_after_absorb(5, 0, 5, 0, "##", "h2"), 19);
+        // t_new == 0 (implies t_current=0 and t_appended=0, but t_appended has header so it's > 0)
+        // t_child = 5 - 5 - 1 = 0 (because len <= b)
+        // t_header = "## h2" len = 5
+        // t_appended = 5 + 0 = 5 (because t_child == 0, merge_text_len returns t_header)
+        // t_current = 0
+        // t_new = 5 (because t_current == 0, merge_text_len returns t_appended)
+        // total = b + 1 + t_new = 5 + 1 + 5 = 11
+        assert_eq!(update_length_after_absorb(5, 5, 5, 5, "##", "h2"), 11);
     }
 }
