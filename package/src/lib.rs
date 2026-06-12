@@ -161,4 +161,54 @@ mod tests {
             "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding"
         );
     }
+
+    #[test]
+    fn test_run_batch_empty() {
+        let inputs: Vec<String> = vec![];
+        let result = run_batch(&inputs, &None).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_run_batch_single_input() {
+        let inputs = vec!["# Title\n\nContent".to_string()];
+        let result = run_batch(&inputs, &None).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].text, "Content");
+        assert_eq!(result[0][0].breadcrumb, "Title");
+    }
+
+    #[test]
+    fn test_run_batch_multiple_inputs() {
+        let inputs = vec![
+            "# Title 1\n\nContent 1".to_string(),
+            "# Title 2\n\nContent 2".to_string(),
+        ];
+        let result = run_batch(&inputs, &None).unwrap();
+        assert_eq!(result.len(), 2);
+
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].text, "Content 1");
+        assert_eq!(result[0][0].breadcrumb, "Title 1");
+
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].text, "Content 2");
+        assert_eq!(result[1][0].breadcrumb, "Title 2");
+    }
+
+    #[test]
+    fn test_run_batch_with_options() {
+        let inputs = vec!["Just content without title".to_string()];
+        let options = Some(breadchunks::ChunkOptions {
+            title: Some("Fallback Title".to_string()),
+            ..Default::default()
+        });
+
+        let result = run_batch(&inputs, &options).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].text, "Just content without title");
+        assert_eq!(result[0][0].breadcrumb, "Fallback Title");
+    }
 }
