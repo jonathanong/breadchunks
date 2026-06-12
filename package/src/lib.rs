@@ -43,9 +43,9 @@ fn map_chunk(c: breadchunks::Chunk) -> std::result::Result<Chunk, &'static str> 
         .map_err(|_| "chunk length exceeds u32::MAX; docs >4 GiB unsupported on Node binding")?;
     Ok(Chunk {
         level: c.level,
-        header: c.header.map(|h| h.to_string()),
-        headers: c.headers.as_ref().clone(),
-        breadcrumb: c.breadcrumb.to_string(),
+        header: c.header.map(std::sync::Arc::unwrap_or_clone),
+        headers: std::sync::Arc::unwrap_or_clone(c.headers),
+        breadcrumb: std::sync::Arc::unwrap_or_clone(c.breadcrumb),
         text: c.text,
         length,
     })
