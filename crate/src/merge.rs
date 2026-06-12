@@ -2,7 +2,10 @@ use std::fmt::Write as _;
 
 use super::tokens::default_length_counter;
 use super::types::Chunk;
-use super::utils::{header_is_superset_of, update_length_after_absorb, update_length_after_merge};
+use super::utils::{
+    header_is_superset_of, update_length_after_absorb, update_length_after_merge,
+    UpdateLengthAfterAbsorbArgs,
+};
 
 const HASHES: &str = "######";
 
@@ -94,14 +97,14 @@ pub fn merge_phase3(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                         .unwrap_or_default();
                     let child_breadcrumb_len = default_length_counter(child.breadcrumb.as_str());
 
-                    current.length = update_length_after_absorb(
-                        current.length,
+                    current.length = update_length_after_absorb(UpdateLengthAfterAbsorbArgs {
+                        current_len: current.length,
                         current_breadcrumb_len,
-                        child.length,
+                        child_len: child.length,
                         child_breadcrumb_len,
                         header_prefix,
                         child_header,
-                    );
+                    });
 
                     current.text.reserve(
                         2 + header_prefix.len() + 1 + child_header.len() + 2 + child.text.len(),
