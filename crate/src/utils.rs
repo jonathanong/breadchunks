@@ -141,7 +141,7 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 
 #[cfg(test)]
 mod tests {
-    use super::{header_is_superset_of, restore_code_placeholders, set_length};
+    use super::{header_is_superset_of, restore_code_placeholders, set_length, update_length_after_absorb};
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
         Some(v.to_string())
@@ -234,5 +234,53 @@ mod tests {
     fn super_full_match() {
         let full: Vec<Option<String>> = (1..=6).map(|i| s(&i.to_string())).collect();
         assert!(header_is_superset_of(&full, &full));
+    }
+
+    #[test]
+    fn test_update_length_after_absorb() {
+        // All parts present:
+        // current_len: 10, current_breadcrumb: 5 -> t_current = 10 - 5 - 1 = 4
+        // child_len: 8, child_breadcrumb: 3 -> t_child = 8 - 3 - 1 = 4
+        // header_prefix: "#", child_header: "A" -> "# A" len 3 -> t_header = 3
+        // t_appended = merge(3, 4) = 3 + 1 + 4 = 8
+        // t_new = merge(4, 8) = 4 + 1 + 8 = 13
+        // current_breadcrumb_len != 0 -> 5 + 1 + 13 = 19
+        assert_eq!(update_length_after_absorb(10, 5, 8, 3, "#", "A"), 19);
+
+        // Current text is empty:
+        // current_len: 5, current_breadcrumb: 5 -> t_current = 0
+        // child_len: 8, child_breadcrumb: 3 -> t_child = 4
+        // header: "# A" -> 3
+        // t_appended = 8
+        // t_new = merge(0, 8) = 8
+        // current_breadcrumb != 0 -> 5 + 1 + 8 = 14
+        assert_eq!(update_length_after_absorb(5, 5, 8, 3, "#", "A"), 14);
+
+        // Child text is empty:
+        // current_len: 10, current_breadcrumb: 5 -> t_current = 4
+        // child_len: 3, child_breadcrumb: 3 -> t_child = 0
+        // header: "# A" -> 3
+        // t_appended = merge(3, 0) = 3
+        // t_new = merge(4, 3) = 4 + 1 + 3 = 8
+        // current_breadcrumb != 0 -> 5 + 1 + 8 = 14
+        assert_eq!(update_length_after_absorb(10, 5, 3, 3, "#", "A"), 14);
+
+        // Current breadcrumb is empty:
+        // current_len: 4, current_breadcrumb: 0 -> t_current = 4
+        // child_len: 8, child_breadcrumb: 3 -> t_child = 4
+        // header: "# A" -> 3
+        // t_appended = 8
+        // t_new = merge(4, 8) = 4 + 1 + 8 = 13
+        // current_breadcrumb == 0 -> 0 + 13 = 13
+        assert_eq!(update_length_after_absorb(4, 0, 8, 3, "#", "A"), 13);
+
+        // Empty breadcrumbs and texts:
+        // current_len: 0, current_breadcrumb: 0 -> t_current = 0
+        // child_len: 0, child_breadcrumb: 0 -> t_child = 0
+        // header: " " -> 0
+        // t_appended = 0
+        // t_new = 0
+        // current_breadcrumb == 0 -> 0
+        assert_eq!(update_length_after_absorb(0, 0, 0, 0, "", ""), 0);
     }
 }
