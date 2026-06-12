@@ -141,7 +141,9 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 
 #[cfg(test)]
 mod tests {
-    use super::{header_is_superset_of, restore_code_placeholders, set_length, update_length_after_absorb};
+    use super::{
+        header_is_superset_of, restore_code_placeholders, set_length, update_length_after_absorb,
+    };
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
         Some(v.to_string())
