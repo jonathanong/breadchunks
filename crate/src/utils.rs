@@ -141,7 +141,7 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 
 #[cfg(test)]
 mod tests {
-    use super::{header_is_superset_of, restore_code_placeholders, set_length};
+    use super::{derive_t, header_is_superset_of, restore_code_placeholders, set_length};
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
         Some(v.to_string())
@@ -234,5 +234,25 @@ mod tests {
     fn super_full_match() {
         let full: Vec<Option<String>> = (1..=6).map(|i| s(&i.to_string())).collect();
         assert!(header_is_superset_of(&full, &full));
+    }
+
+    #[test]
+    fn test_derive_t_len_le_b() {
+        assert_eq!(derive_t(5, 5), 0);
+        assert_eq!(derive_t(4, 5), 0);
+        assert_eq!(derive_t(0, 5), 0);
+    }
+
+    #[test]
+    fn test_derive_t_b_is_0() {
+        assert_eq!(derive_t(5, 0), 5);
+        assert_eq!(derive_t(1, 0), 1);
+    }
+
+    #[test]
+    fn test_derive_t_normal() {
+        // b > 0 and len > b
+        assert_eq!(derive_t(10, 5), 4); // 10 - 5 - 1 = 4
+        assert_eq!(derive_t(6, 5), 0); // 6 - 5 - 1 = 0
     }
 }
