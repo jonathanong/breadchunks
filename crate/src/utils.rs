@@ -124,8 +124,8 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
         return false;
     }
 
-    for i in 0..parent.len() {
-        match (&parent[i], &child[i]) {
+    for (p_opt, c_opt) in parent.iter().zip(child.iter()) {
+        match (p_opt, c_opt) {
             (Some(p), Some(c)) => {
                 if p != c {
                     return false;
