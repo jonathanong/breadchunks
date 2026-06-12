@@ -81,14 +81,21 @@ pub fn restore_code_placeholders<'a>(
     blocks: &[String],
 ) -> std::borrow::Cow<'a, str> {
     const SENTINEL: char = '\u{E000}';
-    if blocks.is_empty() || !text.contains(SENTINEL) {
+    if blocks.is_empty() {
         return std::borrow::Cow::Borrowed(text);
     }
-    let mut out = String::with_capacity(text.len());
+
     let mut remaining = text;
-    while let Some(start) = remaining.find(SENTINEL) {
+    let mut start = match remaining.find(SENTINEL) {
+        Some(idx) => idx,
+        None => return std::borrow::Cow::Borrowed(text),
+    };
+
+    let mut out = String::with_capacity(text.len());
+    loop {
         out.push_str(&remaining[..start]);
         remaining = &remaining[start + SENTINEL.len_utf8()..];
+
         if let Some(end) = remaining.find(SENTINEL) {
             let tag = &remaining[..end];
             remaining = &remaining[end + SENTINEL.len_utf8()..];
@@ -98,17 +105,24 @@ pub fn restore_code_placeholders<'a>(
                 .and_then(|idx| blocks.get(idx))
             {
                 out.push_str(block);
-                continue;
+            } else {
+                // Not a valid placeholder — emit the delimiters and tag verbatim.
+                out.push(SENTINEL);
+                out.push_str(tag);
+                out.push(SENTINEL);
             }
-            // Not a valid placeholder — emit the delimiters and tag verbatim.
-            out.push(SENTINEL);
-            out.push_str(tag);
-            out.push(SENTINEL);
         } else {
             // Lone sentinel with no closing pair — emit verbatim.
             out.push(SENTINEL);
+            break;
         }
+
+        start = match remaining.find(SENTINEL) {
+            Some(idx) => idx,
+            None => break,
+        };
     }
+
     out.push_str(remaining);
     std::borrow::Cow::Owned(out)
 }
