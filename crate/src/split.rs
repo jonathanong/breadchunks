@@ -135,16 +135,11 @@ fn split_paragraphs(
     headers: &[Option<String>],
     chunks: &mut Vec<Chunk>,
 ) {
-    let split_content: Vec<&str> = if let Some(re) = &*PARAGRAPH_SPLIT_REGEX {
-        re.split(content).filter(|p| !p.trim().is_empty()).collect()
+    let mut paragraphs: Box<dyn Iterator<Item = &str>> = if let Some(re) = &*PARAGRAPH_SPLIT_REGEX {
+        Box::new(re.split(content).filter(|p| !p.trim().is_empty()))
     } else {
-        content
-            .split("\n\n")
-            .filter(|p| !p.trim().is_empty())
-            .collect()
+        Box::new(content.split("\n\n").filter(|p| !p.trim().is_empty()))
     };
-
-    let mut paragraphs = split_content.into_iter();
 
     if let Some(first) = paragraphs.next() {
         let breadcrumb = build_breadcrumb(headers);
