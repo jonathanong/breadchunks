@@ -138,7 +138,10 @@ fn split_paragraphs(
     let split_content: Vec<&str> = if let Some(re) = &*PARAGRAPH_SPLIT_REGEX {
         re.split(content).filter(|p| !p.trim().is_empty()).collect()
     } else {
-        content.split("\n\n").filter(|p| !p.trim().is_empty()).collect()
+        content
+            .split("\n\n")
+            .filter(|p| !p.trim().is_empty())
+            .collect()
     };
 
     let mut paragraphs = split_content.into_iter();
