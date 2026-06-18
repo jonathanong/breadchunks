@@ -141,10 +141,30 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 
 #[cfg(test)]
 mod tests {
-    use super::{header_is_superset_of, restore_code_placeholders, set_length};
+    use super::{derive_t, header_is_superset_of, restore_code_placeholders, set_length};
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
         Some(v.to_string())
+    }
+
+    #[test]
+    fn test_derive_t_len_less_than_b() {
+        assert_eq!(derive_t(5, 10), 0);
+    }
+
+    #[test]
+    fn test_derive_t_len_equal_b() {
+        assert_eq!(derive_t(10, 10), 0);
+    }
+
+    #[test]
+    fn test_derive_t_b_zero() {
+        assert_eq!(derive_t(10, 0), 10);
+    }
+
+    #[test]
+    fn test_derive_t_normal() {
+        assert_eq!(derive_t(10, 5), 4); // 10 - 5 - 1
     }
     fn chunk(breadcrumb: &str, text: &str) -> Chunk {
         Chunk {
