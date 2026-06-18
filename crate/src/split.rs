@@ -10,7 +10,7 @@ static HEADER_REGEX: LazyLock<Regex> =
     // Match markdown headers that are at the start of the document or after a newline.
     // We intentionally keep only the full match and strip a leading '\n' in code.
     LazyLock::new(|| {
-        Regex::new(r"(?:^|\n)(?:#{1,6}\s+.+)").expect("BUG: invalid header regex")
+        Regex::new(r"(?:^|\n)(?:#{1,6}\s+.+)").unwrap()
     });
 
 static PARAGRAPH_SPLIT_REGEX: LazyLock<Regex> =
