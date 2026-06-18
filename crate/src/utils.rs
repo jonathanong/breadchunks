@@ -62,12 +62,10 @@ pub struct UpdateLengthAfterAbsorbArgs<'a> {
 pub fn update_length_after_absorb(args: UpdateLengthAfterAbsorbArgs<'_>) -> usize {
     let t_current = derive_t(args.current_len, args.current_breadcrumb_len);
     let t_child = derive_t(args.child_len, args.child_breadcrumb_len);
-    let mut header_text =
-        String::with_capacity(args.header_prefix.len() + 1 + args.child_header.len());
-    header_text.push_str(args.header_prefix);
-    header_text.push(' ');
-    header_text.push_str(args.child_header);
-    let t_header = default_length_counter(&header_text);
+    let t_header = merge_text_len(
+        default_length_counter(args.header_prefix),
+        default_length_counter(args.child_header),
+    );
     let t_appended = merge_text_len(t_header, t_child);
     let t_new = merge_text_len(t_current, t_appended);
     if args.current_breadcrumb_len == 0 || t_new == 0 {
@@ -325,5 +323,19 @@ mod additional_tests {
     #[test]
     fn test_update_length_after_merge() {
         assert_eq!(update_length_after_merge(10, 0, 10, 0), 21);
+    }
+}
+
+#[cfg(test)]
+mod gaps_tests {
+    use super::*;
+
+    #[test]
+    fn test_derive_t_and_merge_text_len_gaps() {
+        assert_eq!(derive_t(5, 5), 0);
+        assert_eq!(derive_t(4, 5), 0);
+        assert_eq!(merge_text_len(0, 5), 5);
+        assert_eq!(merge_text_len(5, 0), 5);
+        assert_eq!(update_length_after_merge(0, 0, 0, 0), 0);
     }
 }
