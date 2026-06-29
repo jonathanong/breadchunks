@@ -47,9 +47,8 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
                 if prev.breadcrumb == chunk.breadcrumb
                     && should_merge(prev.length, chunk.length, min_length, max_length)
                 {
-                    let prev_breadcrumb_len = breadcrumb_len.get_or_insert_with(|| {
-                        default_length_counter(prev.breadcrumb.as_str())
-                    });
+                    let prev_breadcrumb_len = breadcrumb_len
+                        .get_or_insert_with(|| default_length_counter(prev.breadcrumb.as_str()));
                     prev.length = update_length_after_merge(
                         prev.length,
                         *prev_breadcrumb_len,

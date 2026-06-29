@@ -271,7 +271,6 @@ mod tests {
 
     #[test]
     fn test_update_length_after_absorb() {
-
         // All parts present:
         // current_len: 10, current_breadcrumb: 5 -> t_current = 10 - 5 - 1 = 4
         // child_len: 8, child_breadcrumb: 3 -> t_child = 8 - 3 - 1 = 4
