@@ -9,6 +9,11 @@ use super::utils::{
 
 const HASHES: &str = "######";
 
+struct CurrentChunk {
+    chunk: Chunk,
+    breadcrumb_len: Option<usize>,
+}
+
 fn should_merge(a_length: usize, b_length: usize, min_length: usize, max_length: usize) -> bool {
     if a_length >= min_length && b_length >= min_length {
         return false;
@@ -23,38 +28,55 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
     }
 
     let mut result = Vec::new();
-    let mut current: Option<Chunk> = None;
+    let mut current: Option<CurrentChunk> = None;
 
     for chunk in chunks {
         match current.take() {
             None => {
-                current = Some(chunk);
+                current = Some(CurrentChunk {
+                    chunk,
+                    breadcrumb_len: None,
+                });
             }
-            Some(mut prev) => {
+            Some(current_chunk) => {
+                let CurrentChunk {
+                    chunk: mut prev,
+                    mut breadcrumb_len,
+                } = current_chunk;
+
                 if prev.breadcrumb == chunk.breadcrumb
                     && should_merge(prev.length, chunk.length, min_length, max_length)
                 {
-                    let breadcrumb_len = default_length_counter(prev.breadcrumb.as_str());
+                    let prev_breadcrumb_len = breadcrumb_len
+                        .get_or_insert_with(|| default_length_counter(prev.breadcrumb.as_str()));
                     prev.length = update_length_after_merge(
                         prev.length,
-                        breadcrumb_len,
+                        *prev_breadcrumb_len,
                         chunk.length,
-                        breadcrumb_len,
+                        *prev_breadcrumb_len,
                     );
                     prev.text.reserve(chunk.text.len() + 2);
                     prev.text.push_str("\n\n");
                     prev.text.push_str(&chunk.text);
-                    current = Some(prev);
+                    current = Some(CurrentChunk {
+                        chunk: prev,
+                        breadcrumb_len,
+                    });
                     continue;
                 }
 
                 result.push(prev);
-                current = Some(chunk);
+                current = Some(CurrentChunk {
+                    chunk,
+                    breadcrumb_len: None,
+                });
             }
         }
     }
 
-    result.extend(current);
+    if let Some(CurrentChunk { chunk: prev, .. }) = current {
+        result.push(prev);
+    }
     result
 }
 
