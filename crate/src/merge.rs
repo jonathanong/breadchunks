@@ -20,38 +20,41 @@ pub fn merge_phase2(chunks: Vec<Chunk>, min_length: usize, max_length: usize) ->
     }
 
     let mut result = Vec::new();
-    let mut current: Option<Chunk> = None;
+    let mut current: Option<(Chunk, usize)> = None;
 
     for chunk in chunks {
         match current.take() {
             None => {
-                current = Some(chunk);
+                let breadcrumb_len = default_length_counter(chunk.breadcrumb.as_str());
+                current = Some((chunk, breadcrumb_len));
             }
-            Some(mut prev) => {
+            Some((mut prev, prev_breadcrumb_len)) => {
                 if prev.breadcrumb == chunk.breadcrumb
                     && should_merge(prev.length, chunk.length, min_length, max_length)
                 {
-                    let breadcrumb_len = default_length_counter(prev.breadcrumb.as_str());
                     prev.length = update_length_after_merge(
                         prev.length,
-                        breadcrumb_len,
+                        prev_breadcrumb_len,
                         chunk.length,
-                        breadcrumb_len,
+                        prev_breadcrumb_len,
                     );
                     prev.text.reserve(chunk.text.len() + 2);
                     prev.text.push_str("\n\n");
                     prev.text.push_str(&chunk.text);
-                    current = Some(prev);
+                    current = Some((prev, prev_breadcrumb_len));
                     continue;
                 }
 
                 result.push(prev);
-                current = Some(chunk);
+                let chunk_breadcrumb_len = default_length_counter(chunk.breadcrumb.as_str());
+                current = Some((chunk, chunk_breadcrumb_len));
             }
         }
     }
 
-    result.extend(current);
+    if let Some((prev, _)) = current {
+        result.push(prev);
+    }
     result
 }
 

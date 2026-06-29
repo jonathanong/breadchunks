@@ -141,6 +141,20 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_derive_t_and_merge_text_len() {
+        let t = super::derive_t(5, 5);
+        assert_eq!(t, 0);
+
+        let t_new = super::merge_text_len(0, 5);
+        assert_eq!(t_new, 5);
+
+        let t_new = super::merge_text_len(5, 0);
+        assert_eq!(t_new, 5);
+
+        let l_new = super::update_length_after_merge(5, 0, 5, 0);
+        assert_eq!(l_new, 11);
+    }
     use super::{header_is_superset_of, restore_code_placeholders, set_length};
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
