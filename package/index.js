@@ -62,8 +62,13 @@ const isMuslFromChildProcess = () => {
 
 function requireNative() {
   if (process.env.NAPI_RS_NATIVE_LIBRARY_PATH) {
+    const nativeLibraryPath = process.env.NAPI_RS_NATIVE_LIBRARY_PATH
+    if (!require('node:path').isAbsolute(nativeLibraryPath) || require('node:path').extname(nativeLibraryPath) !== '.node') {
+      throw new Error('NAPI_RS_NATIVE_LIBRARY_PATH must be an absolute path to a .node file')
+    }
+
     try {
-      return require(process.env.NAPI_RS_NATIVE_LIBRARY_PATH);
+      return require(nativeLibraryPath);
     } catch (err) {
       loadErrors.push(err)
     }
