@@ -339,7 +339,11 @@ mod additional_tests {
 
     #[test]
     fn test_update_length_after_merge() {
+        assert_eq!(update_length_after_merge(0, 0, 0, 0), 0);
+        assert_eq!(update_length_after_merge(5, 0, 0, 0), 5);
+        assert_eq!(update_length_after_merge(0, 0, 10, 0), 10);
         assert_eq!(update_length_after_merge(10, 0, 10, 0), 21);
+        assert_eq!(update_length_after_merge(10, 3, 15, 3), 22);
     }
 }
 
