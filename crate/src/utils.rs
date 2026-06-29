@@ -50,27 +50,30 @@ pub fn update_length_after_merge(
     }
 }
 
-pub fn update_length_after_absorb(
-    current_len: usize,
-    current_breadcrumb_len: usize,
-    child_len: usize,
-    child_breadcrumb_len: usize,
-    header_prefix: &str,
-    child_header: &str,
-) -> usize {
-    let t_current = derive_t(current_len, current_breadcrumb_len);
-    let t_child = derive_t(child_len, child_breadcrumb_len);
-    let mut header_text = String::with_capacity(header_prefix.len() + 1 + child_header.len());
-    header_text.push_str(header_prefix);
+pub struct UpdateLengthAfterAbsorbArgs<'a> {
+    pub current_len: usize,
+    pub current_breadcrumb_len: usize,
+    pub child_len: usize,
+    pub child_breadcrumb_len: usize,
+    pub header_prefix: &'a str,
+    pub child_header: &'a str,
+}
+
+pub fn update_length_after_absorb(args: UpdateLengthAfterAbsorbArgs<'_>) -> usize {
+    let t_current = derive_t(args.current_len, args.current_breadcrumb_len);
+    let t_child = derive_t(args.child_len, args.child_breadcrumb_len);
+    let mut header_text =
+        String::with_capacity(args.header_prefix.len() + 1 + args.child_header.len());
+    header_text.push_str(args.header_prefix);
     header_text.push(' ');
-    header_text.push_str(child_header);
+    header_text.push_str(args.child_header);
     let t_header = default_length_counter(&header_text);
     let t_appended = merge_text_len(t_header, t_child);
     let t_new = merge_text_len(t_current, t_appended);
-    if current_breadcrumb_len == 0 || t_new == 0 {
-        current_breadcrumb_len + t_new
+    if args.current_breadcrumb_len == 0 || t_new == 0 {
+        args.current_breadcrumb_len + t_new
     } else {
-        current_breadcrumb_len + 1 + t_new
+        args.current_breadcrumb_len + 1 + t_new
     }
 }
 
@@ -234,5 +237,29 @@ mod tests {
     fn super_full_match() {
         let full: Vec<Option<String>> = (1..=6).map(|i| s(&i.to_string())).collect();
         assert!(header_is_superset_of(&full, &full));
+    }
+}
+
+#[cfg(test)]
+mod additional_tests {
+    use super::{derive_t, merge_text_len, update_length_after_merge};
+
+    #[test]
+    fn test_derive_t() {
+        assert_eq!(derive_t(10, 5), 4);
+        assert_eq!(derive_t(5, 10), 0);
+        assert_eq!(derive_t(5, 0), 5);
+    }
+
+    #[test]
+    fn test_merge_text_len() {
+        assert_eq!(merge_text_len(0, 5), 5);
+        assert_eq!(merge_text_len(5, 0), 5);
+        assert_eq!(merge_text_len(5, 5), 11);
+    }
+
+    #[test]
+    fn test_update_length_after_merge() {
+        assert_eq!(update_length_after_merge(10, 0, 10, 0), 21);
     }
 }
