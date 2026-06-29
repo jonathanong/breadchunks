@@ -331,6 +331,25 @@ mod additional_tests {
     }
 
     #[test]
+    fn test_derive_t_len_less_than_or_equal_to_b() {
+        assert_eq!(derive_t(5, 5), 0);
+        assert_eq!(derive_t(4, 5), 0);
+        assert_eq!(derive_t(0, 5), 0);
+    }
+
+    #[test]
+    fn test_derive_t_b_is_zero() {
+        assert_eq!(derive_t(5, 0), 5);
+        assert_eq!(derive_t(10, 0), 10);
+    }
+
+    #[test]
+    fn test_derive_t_len_greater_than_b_and_b_positive() {
+        assert_eq!(derive_t(10, 4), 5); // 10 - 4 - 1 = 5
+        assert_eq!(derive_t(6, 1), 4); // 6 - 1 - 1 = 4
+    }
+
+    #[test]
     fn test_merge_text_len() {
         assert_eq!(merge_text_len(0, 5), 5);
         assert_eq!(merge_text_len(5, 0), 5);
