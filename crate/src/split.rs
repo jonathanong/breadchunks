@@ -25,9 +25,9 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
     let (text_without_code, code_blocks) = extract_code_blocks(text);
     let mut headers: Vec<Option<String>> = vec![title_owned.clone(), None, None, None, None, None];
 
-    let first_header = HEADER_REGEX.find(&text_without_code);
+    let mut header_iterator = HEADER_REGEX.find_iter(&text_without_code).peekable();
 
-    if let Some(first_match) = first_header {
+    if let Some(first_match) = header_iterator.peek() {
         let preface_content = &text_without_code[..first_match.start()];
         split_paragraphs(
             preface_content,
@@ -41,8 +41,7 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 
     // Collect only the byte positions and header text slice we actually need.
     // Using `find_iter` avoids the overhead of `Captures` objects.
-    let header_matches: Vec<(usize, usize, &str)> = HEADER_REGEX
-        .find_iter(&text_without_code)
+    let header_matches: Vec<(usize, usize, &str)> = header_iterator
         .map(|m| {
             let raw = m.as_str();
             let header_text = raw.strip_prefix('\n').unwrap_or(raw);
