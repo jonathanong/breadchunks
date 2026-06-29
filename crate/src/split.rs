@@ -95,15 +95,15 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 /// placeholder (`U+E000 CODE_BLOCK_N U+E000`) that cannot appear in ordinary
 /// Markdown, then returns the substituted text and the extracted blocks.
 fn extract_code_blocks(text: &str) -> (Cow<'_, str>, Vec<String>) {
-    let mut iter = CODE_BLOCK_REGEX.find_iter(text).peekable();
-    if iter.peek().is_none() {
+    let mut iter = CODE_BLOCK_REGEX.find_iter(text);
+    let Some(first_match) = iter.next() else {
         return (Cow::Borrowed(text), Vec::new());
-    }
+    };
 
     let mut blocks = Vec::new();
     let mut out = String::with_capacity(text.len());
     let mut cursor = 0;
-    for (i, m) in iter.enumerate() {
+    for (i, m) in std::iter::once(first_match).chain(iter).enumerate() {
         out.push_str(&text[cursor..m.start()]);
         use std::fmt::Write as _;
         let _ = write!(out, "\u{E000}CODE_BLOCK_{i}\u{E000}");
