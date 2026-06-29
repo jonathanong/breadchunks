@@ -177,7 +177,6 @@ mod tests {
         let l_new = super::update_length_after_merge(5, 0, 5, 0);
         assert_eq!(l_new, 11);
     }
-    #[test]
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
         Some(v.to_string())
