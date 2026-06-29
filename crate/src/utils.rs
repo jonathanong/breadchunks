@@ -62,12 +62,10 @@ pub struct UpdateLengthAfterAbsorbArgs<'a> {
 pub fn update_length_after_absorb(args: UpdateLengthAfterAbsorbArgs<'_>) -> usize {
     let t_current = derive_t(args.current_len, args.current_breadcrumb_len);
     let t_child = derive_t(args.child_len, args.child_breadcrumb_len);
-    let mut header_text =
-        String::with_capacity(args.header_prefix.len() + 1 + args.child_header.len());
-    header_text.push_str(args.header_prefix);
-    header_text.push(' ');
-    header_text.push_str(args.child_header);
-    let t_header = default_length_counter(&header_text);
+    let t_header = merge_text_len(
+        default_length_counter(args.header_prefix),
+        default_length_counter(args.child_header),
+    );
     let t_appended = merge_text_len(t_header, t_child);
     let t_new = merge_text_len(t_current, t_appended);
     if args.current_breadcrumb_len == 0 || t_new == 0 {
@@ -160,6 +158,7 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 mod tests {
     use super::{
         header_is_superset_of, restore_code_placeholders, set_length, update_length_after_absorb,
+        UpdateLengthAfterAbsorbArgs,
     };
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
@@ -257,6 +256,22 @@ mod tests {
 
     #[test]
     fn test_update_length_after_absorb() {
+        let update = |current_len: usize,
+                      current_breadcrumb_len: usize,
+                      child_len: usize,
+                      child_breadcrumb_len: usize,
+                      header_prefix: &'static str,
+                      child_header: &'static str| {
+            update_length_after_absorb(UpdateLengthAfterAbsorbArgs {
+                current_len,
+                current_breadcrumb_len,
+                child_len,
+                child_breadcrumb_len,
+                header_prefix,
+                child_header,
+            })
+        };
+
         // All parts present:
         // current_len: 10, current_breadcrumb: 5 -> t_current = 10 - 5 - 1 = 4
         // child_len: 8, child_breadcrumb: 3 -> t_child = 8 - 3 - 1 = 4
@@ -264,7 +279,7 @@ mod tests {
         // t_appended = merge(3, 4) = 3 + 1 + 4 = 8
         // t_new = merge(4, 8) = 4 + 1 + 8 = 13
         // current_breadcrumb_len != 0 -> 5 + 1 + 13 = 19
-        assert_eq!(update_length_after_absorb(10, 5, 8, 3, "#", "A"), 19);
+        assert_eq!(update(10, 5, 8, 3, "#", "A"), 19);
 
         // Current text is empty:
         // current_len: 5, current_breadcrumb: 5 -> t_current = 0
@@ -273,7 +288,7 @@ mod tests {
         // t_appended = 8
         // t_new = merge(0, 8) = 8
         // current_breadcrumb != 0 -> 5 + 1 + 8 = 14
-        assert_eq!(update_length_after_absorb(5, 5, 8, 3, "#", "A"), 14);
+        assert_eq!(update(5, 5, 8, 3, "#", "A"), 14);
 
         // Child text is empty:
         // current_len: 10, current_breadcrumb: 5 -> t_current = 4
@@ -282,7 +297,7 @@ mod tests {
         // t_appended = merge(3, 0) = 3
         // t_new = merge(4, 3) = 4 + 1 + 3 = 8
         // current_breadcrumb != 0 -> 5 + 1 + 8 = 14
-        assert_eq!(update_length_after_absorb(10, 5, 3, 3, "#", "A"), 14);
+        assert_eq!(update(10, 5, 3, 3, "#", "A"), 14);
 
         // Current breadcrumb is empty:
         // current_len: 4, current_breadcrumb: 0 -> t_current = 4
@@ -291,7 +306,7 @@ mod tests {
         // t_appended = 8
         // t_new = merge(4, 8) = 4 + 1 + 8 = 13
         // current_breadcrumb == 0 -> 0 + 13 = 13
-        assert_eq!(update_length_after_absorb(4, 0, 8, 3, "#", "A"), 13);
+        assert_eq!(update(4, 0, 8, 3, "#", "A"), 13);
 
         // Empty breadcrumbs and texts:
         // current_len: 0, current_breadcrumb: 0 -> t_current = 0
@@ -300,7 +315,7 @@ mod tests {
         // t_appended = 0
         // t_new = 0
         // current_breadcrumb == 0 -> 0
-        assert_eq!(update_length_after_absorb(0, 0, 0, 0, "", ""), 0);
+        assert_eq!(update(0, 0, 0, 0, "", ""), 0);
     }
 }
 
@@ -325,5 +340,35 @@ mod additional_tests {
     #[test]
     fn test_update_length_after_merge() {
         assert_eq!(update_length_after_merge(10, 0, 10, 0), 21);
+    }
+}
+
+#[cfg(test)]
+mod gaps_tests {
+    use super::*;
+
+    #[test]
+    fn test_derive_t_and_merge_text_len_gaps() {
+        assert_eq!(derive_t(5, 5), 0);
+        assert_eq!(derive_t(4, 5), 0);
+        assert_eq!(merge_text_len(0, 5), 5);
+        assert_eq!(merge_text_len(5, 0), 5);
+        assert_eq!(update_length_after_merge(0, 0, 0, 0), 0);
+    }
+
+    #[test]
+    fn test_update_length_after_absorb_blank_child_heading_has_no_extra_separator() {
+        assert_eq!(
+            update_length_after_absorb(UpdateLengthAfterAbsorbArgs {
+                current_len: 2,
+                current_breadcrumb_len: 0,
+                child_len: 0,
+                child_breadcrumb_len: 0,
+                header_prefix: "##",
+                child_header: "",
+            }),
+            5,
+            "blank child heading should not allocate separator after header marker"
+        );
     }
 }
