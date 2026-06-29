@@ -381,8 +381,10 @@ mod additional_tests {
 
     #[test]
     fn test_merge_text_len() {
+        assert_eq!(merge_text_len(0, 0), 0);
         assert_eq!(merge_text_len(0, 5), 5);
         assert_eq!(merge_text_len(5, 0), 5);
+        assert_eq!(merge_text_len(5, 3), 9);
         assert_eq!(merge_text_len(5, 5), 11);
     }
 
