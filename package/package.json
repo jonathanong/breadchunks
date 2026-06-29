@@ -23,8 +23,8 @@
     "llm"
   ],
   "scripts": {
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "build": "napi build --platform --release && node patch.js",
+    "build:debug": "napi build --platform && node patch.js",
     "test": "node --test __test__/*.spec.mjs",
     "coverage": "c8 node --test __test__/*.spec.mjs"
   },
