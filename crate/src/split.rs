@@ -13,8 +13,8 @@ static HEADER_REGEX: LazyLock<Regex> =
         Regex::new(r"(?:^|\n)(?:#{1,6}\s+.+)").expect("BUG: invalid header regex")
     });
 
-static PARAGRAPH_SPLIT_REGEX: LazyLock<Option<Regex>> =
-    LazyLock::new(|| Regex::new(r"\n\s*\n").ok());
+static PARAGRAPH_SPLIT_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\n\s*\n").expect("BUG: invalid paragraph split regex"));
 
 /// Phase 1: Split markdown into one chunk per paragraph, grouped under its nearest header.
 pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
@@ -135,11 +135,9 @@ fn split_paragraphs(
     headers: &[Option<String>],
     chunks: &mut Vec<Chunk>,
 ) {
-    let mut paragraphs: Box<dyn Iterator<Item = &str>> = if let Some(re) = &*PARAGRAPH_SPLIT_REGEX {
-        Box::new(re.split(content).filter(|p| !p.trim().is_empty()))
-    } else {
-        Box::new(content.split("\n\n").filter(|p| !p.trim().is_empty()))
-    };
+    let mut paragraphs = PARAGRAPH_SPLIT_REGEX
+        .split(content)
+        .filter(|p| !p.trim().is_empty());
 
     if let Some(first) = paragraphs.next() {
         let breadcrumb = build_breadcrumb(headers);
