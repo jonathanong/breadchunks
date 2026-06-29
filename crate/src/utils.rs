@@ -158,6 +158,7 @@ pub fn header_is_superset_of(parent: &[Option<String>], child: &[Option<String>]
 mod tests {
     use super::{
         header_is_superset_of, restore_code_placeholders, set_length, update_length_after_absorb,
+        UpdateLengthAfterAbsorbArgs,
     };
     use crate::types::Chunk;
     fn s(v: &str) -> Option<String> {
@@ -261,7 +262,7 @@ mod tests {
                       child_breadcrumb_len: usize,
                       header_prefix: &'static str,
                       child_header: &'static str| {
-            super::update_length_after_absorb(UpdateLengthAfterAbsorbArgs {
+            update_length_after_absorb(UpdateLengthAfterAbsorbArgs {
                 current_len,
                 current_breadcrumb_len,
                 child_len,
