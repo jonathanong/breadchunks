@@ -1,16 +1,16 @@
 use super::types::Chunk;
 use super::utils::{restore_code_placeholders, set_length};
-use lazy_regex::{lazy_regex, Lazy, Regex};
+use lazy_regex::{regex, Lazy, Regex};
 use std::borrow::Cow;
 
-static CODE_BLOCK_REGEX: Lazy<Regex> = lazy_regex!(r"```[\s\S]*?```|`[^`]+`");
+static CODE_BLOCK_REGEX: &Lazy<Regex> = regex!(r"```[\s\S]*?```|`[^`]+`");
 
-static HEADER_REGEX: Lazy<Regex> =
+static HEADER_REGEX: &Lazy<Regex> =
     // Match markdown headers that are at the start of the document or after a newline.
     // We intentionally keep only the full match and strip a leading '\n' in code.
-    lazy_regex!(r"(?:^|\n)(?:#{1,6}\s+.+)");
+    regex!(r"(?:^|\n)(?:#{1,6}\s+.+)");
 
-static PARAGRAPH_SPLIT_REGEX: Lazy<Regex> = lazy_regex!(r"\n\s*\n");
+static PARAGRAPH_SPLIT_REGEX: &Lazy<Regex> = regex!(r"\n\s*\n");
 
 /// Phase 1: Split markdown into one chunk per paragraph, grouped under its nearest header.
 pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
