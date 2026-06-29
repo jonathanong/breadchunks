@@ -1,6 +1,7 @@
 use super::types::Chunk;
 use super::utils::{restore_code_placeholders, set_length};
 use regex::Regex;
+use std::borrow::Cow;
 use std::sync::LazyLock;
 
 static CODE_BLOCK_REGEX: LazyLock<Regex> =
@@ -93,11 +94,16 @@ pub fn split_by_headers(text: &str, title: Option<&str>) -> Vec<Chunk> {
 /// Single-pass extraction: replaces each code block with a PUA-bracketed
 /// placeholder (`U+E000 CODE_BLOCK_N U+E000`) that cannot appear in ordinary
 /// Markdown, then returns the substituted text and the extracted blocks.
-fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
+fn extract_code_blocks(text: &str) -> (Cow<'_, str>, Vec<String>) {
+    let mut iter = CODE_BLOCK_REGEX.find_iter(text).peekable();
+    if iter.peek().is_none() {
+        return (Cow::Borrowed(text), Vec::new());
+    }
+
     let mut blocks = Vec::new();
     let mut out = String::with_capacity(text.len());
     let mut cursor = 0;
-    for (i, m) in CODE_BLOCK_REGEX.find_iter(text).enumerate() {
+    for (i, m) in iter.enumerate() {
         out.push_str(&text[cursor..m.start()]);
         use std::fmt::Write as _;
         let _ = write!(out, "\u{E000}CODE_BLOCK_{i}\u{E000}");
@@ -105,7 +111,7 @@ fn extract_code_blocks(text: &str) -> (String, Vec<String>) {
         cursor = m.end();
     }
     out.push_str(&text[cursor..]);
-    (out, blocks)
+    (Cow::Owned(out), blocks)
 }
 
 fn build_breadcrumb(headers: &[Option<String>]) -> String {

@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
 
 pub fn bench_split(c: &mut Criterion) {
-    let markdown = "
+    let markdown_no_code = "
 # Intro
 Some intro text here.
 
@@ -36,7 +36,7 @@ Paragraph 3 under H3.
                 phase: Some(1),
                 ..Default::default()
             };
-            breadchunks::chunk(black_box(&markdown), black_box(Some(&options)))
+            breadchunks::chunk(black_box(&markdown_no_code), black_box(Some(&options)))
         })
     });
 }
