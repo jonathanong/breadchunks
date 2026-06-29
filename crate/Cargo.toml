@@ -11,6 +11,7 @@ keywords = ["markdown", "chunking", "rag", "embedding", "llm"]
 categories = ["text-processing"]
 
 [dependencies]
+lazy-regex = "3.6.0"
 regex = "1.11"
 
 [[bench]]
