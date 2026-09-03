@@ -11,12 +11,13 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
@@ -53,10 +54,9 @@ jobs:
         run: cargo test --package breadchunks-node
 
       - name: Upload coverage to Codecov
-        if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v7.0.0
         with:
-          token: ${{ env.CODECOV_TOKEN }}
+          use_oidc: true
           files: target/llvm-cov/lcov.info
           flags: rust
           fail_ci_if_error: false
